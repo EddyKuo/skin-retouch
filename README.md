@@ -1,7 +1,5 @@
 # Skin Retoucher Pro
 
-![Project Banner](https://i.imgur.com/your-banner-image.png) <!-- 您可以替換成自己的專案橫幅圖片 -->
-
 A professional-grade desktop application for skin retouching, built with Electron and WebGL. This tool leverages the power of GPU acceleration to provide a real-time, non-destructive workflow based on the industry-standard **Frequency Separation** technique.
 
 ## Features
