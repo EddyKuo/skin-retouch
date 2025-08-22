@@ -1,0 +1,53 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <title>Skin Retoucher</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <div class="main-container">
+        <div class="canvas-container">
+            <canvas id="gl-canvas"></canvas>
+        </div>
+        <div class="controls-container">
+            <h2>Processing</h2>
+            <div class="control-group">
+                <label for="radius-slider">Smoothness: <span id="radius-value">10</span></label>
+                <input type="range" id="radius-slider" min="0" max="100" value="10" step="0.1">
+            </div>
+            <div class="control-group">
+                <label for="detail-slider">Detail Amount: <span id="detail-value">70</span>%</label>
+                <input type="range" id="detail-slider" min="0" max="100" value="70" step="1">
+            </div>
+
+            <h2>Skin Tone Selection</h2>
+            <p class="instructions">Click on the image to select up to 10 skin tones.</p>
+            <div class="control-group">
+                <label for="tolerance-slider">Color Tolerance: <span id="tolerance-value">20</span></label>
+                <input type="range" id="tolerance-slider" min="0" max="100" value="20" step="1">
+            </div>
+            <div class="color-swatches" id="color-swatches"></div>
+            <button id="clear-colors-btn" class="button-secondary">Clear Tones</button>
+
+            <h2>Debug View</h2>
+            <div class="control-group radio-group" id="view-mode-group">
+                <label><input type="radio" name="view-mode" value="final" checked> Final Result</label>
+                <label><input type="radio" name="view-mode" value="mask"> Skin Mask</label>
+                <label><input type="radio" name="view-mode" value="high"> High Frequency</label>
+                <label><input type="radio" name="view-mode" value="low"> Low Frequency</label>
+            </div>
+
+            <div class="button-group">
+                <button id="load-btn">Load Image</button>
+                <button id="save-btn">Save Image</button>
+            </div>
+        </div>
+    </div>
+    <input type="file" id="file-input" accept="image/*" style="display: none;">
+    <script type="module" src="renderer.js"></script>
+</body>
+</html>
