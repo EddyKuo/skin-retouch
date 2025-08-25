@@ -38,7 +38,7 @@ The core of the application is a multi-pass rendering pipeline that leverages Fr
 The pipeline executes in the following order:
 
 #### Pass 1: Skin Mask Generation
--   **Input**: Original Image Texture, user-selected skin tones (as a `uniform` array of HSV values), and the `tolerance` value.
+-   **Input**: Original Image Texture, user-selected skin tones (as a `uniform` array of HSV values), and the `tolerance` value. When the user right-clicks to select an 11th tone, the oldest of the 10 previous tones is automatically discarded, ensuring the array always holds the 10 most recent selections.
 -   **Shader**: `maskFragmentShader.glsl`
 -   **Process**: For each pixel of the input image, the shader:
     1.  Converts the pixel's color from RGB to HSV.

@@ -223,7 +223,12 @@ function handleClearColors() {
 
 function handleContextMenu(event) {
     event.preventDefault();
-    if (!image || selectedSkinTones.length >= 10) return;
+    if (!image) return;
+
+    // New logic: If 10 tones are already selected, remove the oldest one.
+    if (selectedSkinTones.length >= 10) {
+        selectedSkinTones.shift(); // Removes the first element from the array
+    }
 
     const { pixelX, pixelY } = getPixelCoordinatesFromEvent(event);
     if (pixelX < 0 || pixelX >= image.width || pixelY < 0 || pixelY >= image.height) return;
