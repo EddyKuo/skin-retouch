@@ -196,6 +196,7 @@ function handleFileSelect(event) {
 
             setupWebGL();
             render();
+            renderMaskPreview();
         };
         img.src = e.target.result;
     };
@@ -213,6 +214,7 @@ function handleSliderChange(event) {
     } else if (event.target === toleranceSlider) {
         colorTolerance = parseFloat(event.target.value) / 100.0;
         toleranceValueSpan.textContent = event.target.value;
+        if (image) renderMaskPreview(); // Update preview only for this slider
     }
     if (image) render();
 }
@@ -220,7 +222,10 @@ function handleSliderChange(event) {
 function handleClearColors() {
     selectedSkinTones = [];
     updateColorSwatches();
-    if (image) render();
+    if (image) {
+        render();
+        renderMaskPreview();
+    }
 }
 
 function handleContextMenu(event) {
@@ -251,6 +256,7 @@ function handleContextMenu(event) {
     
     updateColorSwatches();
     render();
+    renderMaskPreview();
 }
 
 function handleSave() {
@@ -494,9 +500,6 @@ function render() {
     gl.uniform1i(gl.getUniformLocation(finalProgram, 'u_skinMask'), 2);
     
     draw(finalProgram);
-
-    // --- Render Skin Mask Preview ---
-    renderMaskPreview();
 }
 
 function renderMaskPreview() {
