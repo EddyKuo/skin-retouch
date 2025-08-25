@@ -170,16 +170,20 @@ button:hover {
 }
 .button-secondary:hover { background-color: var(--warning-hover); }
 
+.radio-group div {
+    margin-bottom: 8px; /* Add some space between options */
+}
+
 .radio-group label {
-    display: flex;
-    align-items: center;
-    gap: 8px;
+    display: inline-block;
     font-size: 0.9rem;
     cursor: pointer;
     padding: 0.5rem 0.75rem;
     border-radius: 6px;
     transition: all 0.2s;
     border: 2px solid transparent; /* Add transparent border for smooth transition */
+    width: 100%;
+    box-sizing: border-box;
 }
 
 .radio-group label:hover {
@@ -193,7 +197,7 @@ button:hover {
 .radio-group input[type="radio"]:checked + label {
     color: white;
     border-color: var(--accent-color); /* Use accent color for the border */
-    box-shadow: 0 0 10px rgba(0, 123, 255, 0.5); /* Optional: add a glow effect */
+    background-color: rgba(0, 123, 255, 0.1); /* Optional: add a subtle background */
 }
 
 
