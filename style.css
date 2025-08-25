@@ -178,9 +178,8 @@ button:hover {
     cursor: pointer;
     padding: 0.5rem 0.75rem;
     border-radius: 6px;
-    transition: background-color 0.2s;
-    position: relative;
-    padding-left: 30px; /* Make space for custom radio */
+    transition: all 0.2s;
+    border: 2px solid transparent; /* Add transparent border for smooth transition */
 }
 
 .radio-group label:hover {
@@ -191,47 +190,10 @@ button:hover {
     display: none; 
 }
 
-/* Custom radio button - the circle */
-.radio-group label::before {
-    content: '';
-    position: absolute;
-    left: 8px;
-    top: 50%;
-    transform: translateY(-50%);
-    width: 16px;
-    height: 16px;
-    border: 2px solid var(--text-muted);
-    border-radius: 50%;
-    transition: border-color 0.2s;
-}
-
-/* Custom radio button - the inner dot */
-.radio-group label::after {
-    content: '';
-    position: absolute;
-    left: 12px;
-    top: 50%;
-    transform: translateY(-50%) scale(0);
-    width: 8px;
-    height: 8px;
-    background-color: white; /* Changed to white for contrast */
-    border-radius: 50%;
-    transition: transform 0.2s ease-in-out;
-}
-
 .radio-group input[type="radio"]:checked + label {
-    background-color: var(--accent-color);
     color: white;
-}
-
-/* Show the inner dot when checked */
-.radio-group input[type="radio"]:checked + label::after {
-    transform: translateY(-50%) scale(1);
-}
-
-/* Change circle border color when checked */
-.radio-group input[type="radio"]:checked + label::before {
-    border-color: var(--accent-color);
+    border-color: var(--accent-color); /* Use accent color for the border */
+    box-shadow: 0 0 10px rgba(0, 123, 255, 0.5); /* Optional: add a glow effect */
 }
 
 
