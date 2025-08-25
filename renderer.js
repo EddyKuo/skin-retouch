@@ -15,6 +15,8 @@ const viewModeGroup = document.getElementById('view-mode-group');
 const loadBtn = document.getElementById('load-btn');
 const saveBtn = document.getElementById('save-btn');
 const fileInput = document.getElementById('file-input');
+const maskPreviewCanvas = document.getElementById('mask-preview-canvas');
+const maskPreviewCtx = maskPreviewCanvas.getContext('2d');
 
 // --- WebGL & State Variables ---
 const gl = canvas.getContext('webgl', { preserveDrawingBuffer: true });
@@ -492,6 +494,55 @@ function render() {
     gl.uniform1i(gl.getUniformLocation(finalProgram, 'u_skinMask'), 2);
     
     draw(finalProgram);
+
+    // --- Render Skin Mask Preview ---
+    renderMaskPreview();
+}
+
+function renderMaskPreview() {
+    if (!image) return;
+
+    // Bind the framebuffer that contains the skin mask (FBO 2)
+    gl.bindFramebuffer(gl.FRAMEBUFFER, framebuffers[2]);
+
+    // Read the pixel data from the framebuffer
+    const pixels = new Uint8Array(image.width * image.height * 4);
+    gl.readPixels(0, 0, image.width, image.height, gl.RGBA, gl.UNSIGNED_BYTE, pixels);
+
+    // Unbind the framebuffer
+    gl.bindFramebuffer(gl.FRAMEBUFFER, null);
+
+    // Use a temporary 2D canvas to prepare the image data
+    const tempCanvas = document.createElement('canvas');
+    tempCanvas.width = image.width;
+    tempCanvas.height = image.height;
+    const tempCtx = tempCanvas.getContext('2d');
+    const imageData = tempCtx.createImageData(image.width, image.height);
+    
+    // Flip the image vertically
+    const data = imageData.data;
+    for (let i = 0; i < image.height; i++) {
+        for (let j = 0; j < image.width; j++) {
+            const srcIndex = (i * image.width + j) * 4;
+            const destIndex = ((image.height - 1 - i) * image.width + j) * 4;
+            data[destIndex] = pixels[srcIndex];
+            data[destIndex + 1] = pixels[srcIndex + 1];
+            data[destIndex + 2] = pixels[srcIndex + 2];
+            data[destIndex + 3] = 255; // Ensure full alpha
+        }
+    }
+    tempCtx.putImageData(imageData, 0, 0);
+
+    // Draw the flipped image to the preview canvas, fitting it correctly
+    maskPreviewCtx.clearRect(0, 0, maskPreviewCanvas.width, maskPreviewCanvas.height);
+    const hRatio = maskPreviewCanvas.width / image.width;
+    const vRatio = maskPreviewCanvas.height / image.height;
+    const ratio = Math.min(hRatio, vRatio);
+    const centerShift_x = (maskPreviewCanvas.width - image.width * ratio) / 2;
+    const centerShift_y = (maskPreviewCanvas.height - image.height * ratio) / 2;
+    
+    maskPreviewCtx.drawImage(tempCanvas, 0, 0, image.width, image.height,
+                           centerShift_x, centerShift_y, image.width * ratio, image.height * ratio);
 }
 
 function getTransformMatrix() {
