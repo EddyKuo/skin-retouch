@@ -1,75 +1,75 @@
-# Design & Architecture Document
+# 設計與架構文件
 
-This document outlines the technical architecture, core algorithms, and design decisions made during the development of the Skin Retoucher Pro application.
+本文件闡述了 Skin Retoucher Pro 應用程式在開發過程中採用的技術架構、核心演算法以及設計決策。
 
-## 1. Core Concept: Frequency Separation
+## 1. 核心概念：高低頻分離 (Frequency Separation)
 
-The fundamental technique used is **Frequency Separation**. This method decomposes the image into two distinct layers:
+本專案使用的基礎技術是**高低頻分離**。此方法將影像分解為兩個獨立的圖層：
 
-1.  **Low-Frequency Layer (Color/Tone)**: This layer contains the broad color and tonal information of the image. We generate it by applying a **Gaussian Blur** to the original image. The `Smoothness` slider in the UI directly controls the sigma (standard deviation) of this blur.
+1.  **低頻圖層 (顏色/色調)**：此圖層包含影像中大面積的顏色與色調資訊。我們透過對原始影像應用**高斯模糊 (Gaussian Blur)** 來生成此圖層。UI 介面中的 `Smoothness` (平滑度) 滑桿直接控制此次模糊的標準差 (sigma)。
 
-2.  **High-Frequency Layer (Texture/Details)**: This layer contains the fine details and texture, such as pores, hair, and fine lines. It's calculated by taking the difference between the original image and the low-frequency (blurred) layer:
-    `High Frequency = Original Image - Low-Frequency Layer`
+2.  **高頻圖層 (紋理/細節)**：此圖層包含精細的細節與紋理，例如毛孔、毛髮和細紋。它的計算方式是原始影像與低頻（模糊後）圖層之間的差值：
+    `高頻圖層 = 原始影像 - 低頻圖層`
 
-By manipulating these layers independently (e.g., smoothing the low-frequency layer) and then recombining them, we can achieve high-quality retouching without destroying the natural skin texture.
+透過獨立操作這些圖層（例如，平滑化低頻圖層），然後再將它們重新組合，我們可以在不破壞自然皮膚紋理的前提下，實現高品質的皮膚修飾效果。
 
-## 2. Application Architecture
+## 2. 應用程式架構
 
-The application uses a standard Electron architecture, separating the Node.js backend (Main Process) from the browser-based frontend (Renderer Process).
+本應用程式採用標準的 Electron 架構，將 Node.js 後端 (主程序) 與基於瀏覽器的前端 (渲染程序) 分離開來。
 
--   **Main Process (`main.js`)**:
-    -   Responsible for creating and managing the application window (`BrowserWindow`).
-    -   Handles native operating system interactions, such as opening the "Save File" dialog.
-    -   Listens for events from the Renderer Process via Inter-Process Communication (IPC).
+-   **主程序 (`main.js`)**:
+    -   負責建立與管理應用程式視窗 (`BrowserWindow`)。
+    -   處理原生的作業系統互動，例如開啟「儲存檔案」對話框。
+    -   透過行程間通訊 (IPC) 監聽來自渲染程序的事件。
 
--   **Renderer Process (`renderer.js`, `index.html`)**:
-    -   Manages the entire user interface and user interactions.
-    -   Hosts the `<canvas>` element where all WebGL rendering occurs.
-    -   Contains all the core image processing logic, implemented in WebGL and GLSL.
+-   **渲染程序 (`renderer.js`, `index.html`)**:
+    -   管理整個使用者介面與使用者互動。
+    -   持有用於所有 WebGL 渲染的 `<canvas>` 元素。
+    -   包含所有在 WebGL 與 GLSL 中實現的核心影像處理邏輯。
 
--   **Preload Script (`preload.js`)**:
-    -   Acts as a secure bridge between the Main and Renderer processes.
-    -   Uses the `contextBridge` to expose a safe, limited API (e.g., `window.electronAPI.saveImage`) to the Renderer, avoiding the security risks of enabling full Node.js integration in the frontend.
+-   **預載入腳本 (`preload.js`)**:
+    -   作為主程序與渲染程序之間的一個安全橋樑。
+    -   使用 `contextBridge` 向渲染程序暴露一個安全的、受限的 API (例如 `window.electronAPI.saveImage`)，從而避免了在前端啟用完整 Node.js 整合所帶來的安全風險。
 
-## 3. WebGL Rendering Pipeline
+## 3. WebGL 渲染管線
 
-The core of the application is a multi-pass rendering pipeline that leverages Framebuffer Objects (FBOs) to perform calculations offscreen. All processing is done at the original image's resolution to maintain quality.
+應用程式的核心是一個多通道 (multi-pass) 渲染管線，它利用**幀緩衝區物件 (Framebuffer Objects, FBOs)** 在離屏環境中執行計算。所有處理都在原始影像的解析度下進行，以確保品質。
 
-The pipeline executes in the following order:
+管線按以下順序執行：
 
-#### Pass 1: Skin Mask Generation
--   **Input**: Original Image Texture, user-selected skin tones (as a `uniform` array of HSV values), and the `tolerance` value. When the user right-clicks to select an 11th tone, the oldest of the 10 previous tones is automatically discarded, ensuring the array always holds the 10 most recent selections.
--   **Shader**: `maskFragmentShader.glsl`
--   **Process**: For each pixel of the input image, the shader:
-    1.  Converts the pixel's color from RGB to HSV.
-    2.  Calculates the difference in Hue and Saturation between the pixel and each of the selected skin tones.
-    3.  If the difference is within the `tolerance` threshold for any of the selected tones, the output for that pixel is `1.0` (white). Otherwise, it's `0.0` (black).
--   **Output**: A black-and-white Skin Mask Texture, rendered into an FBO.
+#### Pass 1: 皮膚遮罩生成
+-   **輸入**: 原始影像紋理、使用者選擇的膚色 (作為一個 HSV 值的 `uniform` 陣列)，以及 `tolerance` (容差) 值。當使用者右鍵點擊選取第 11 個顏色時，系統會自動丟棄先前 10 個顏色中最舊的一個，以確保陣列中始終保留最新的 10 個選取色。
+-   **著色器**: `maskFragmentShader.glsl`
+-   **處理流程**: 對於輸入影像的每個像素，著色器會：
+    1.  將像素的顏色從 RGB 轉換為 HSV 色彩空間。
+    2.  計算該像素與每個被選膚色在色相 (Hue) 和飽和度 (Saturation) 上的差異。
+    3.  如果差異在任何一個被選膚色的 `tolerance` 閾值之內，該像素的輸出即為 `1.0` (白色)；否則為 `0.0` (黑色)。
+-   **輸出**: 一張黑白兩色的皮膚遮罩紋理，被渲染到一個 FBO 中。
 
-#### Pass 2 & 3: Low-Frequency Layer Generation (Two-Pass Gaussian Blur)
-To efficiently generate the blurred (low-frequency) layer, we use a separable Gaussian blur, which is significantly faster than a single, large 2D kernel.
--   **Pass 2 (Horizontal Blur)**:
-    -   **Input**: Original Image Texture.
-    -   **Shader**: `blurFragmentShader.glsl` (with `u_dir` set to `(1.0, 0.0)`).
-    -   **Output**: A horizontally blurred texture, rendered into an FBO.
--   **Pass 3 (Vertical Blur)**:
-    -   **Input**: The horizontally blurred texture from Pass 2.
-    -   **Shader**: `blurFragmentShader.glsl` (with `u_dir` set to `(0.0, 1.0)`).
-    -   **Output**: The final, fully blurred Low-Frequency Texture, rendered into a separate FBO.
+#### Pass 2 & 3: 低頻圖層生成 (兩通道高斯模糊)
+為了高效地生成模糊後 (低頻) 的圖層，我們採用了可分離的高斯模糊，這比單一的大型 2D 核心運算要快得多。
+-   **Pass 2 (水平模糊)**:
+    -   **輸入**: 原始影像紋理。
+    -   **著色器**: `blurFragmentShader.glsl` (其中 `u_dir` 設為 `(1.0, 0.0)`)。
+    -   **輸出**: 一張水平模糊後的紋理，被渲染到一個 FBO 中。
+-   **Pass 3 (垂直模糊)**:
+    -   **輸入**: 來自 Pass 2 的水平模糊紋理。
+    -   **著色器**: `blurFragmentShader.glsl` (其中 `u_dir` 設為 `(0.0, 1.0)`)。
+    -   **輸出**: 最終完全模糊的低頻圖層紋理，被渲染到另一個 FBO 中。
 
-#### Pass 4: Final Composition & Display
-This is the final stage where all the generated layers are combined and displayed on the screen.
--   **Input**: Original Texture, Low-Frequency Texture, Skin Mask Texture, and UI parameters (`detailAmount`, `viewMode`).
--   **Shader**: `finalFragmentShader.glsl`
--   **Process**:
-    1.  Calculates the High-Frequency layer in real-time: `highPass = original - lowFrequency`.
-    2.  Calculates the smoothed skin color: `smoothedSkin = lowFrequency + highPass * detailAmount`.
-    3.  Blends the original image with the smoothed skin using the mask: `finalColor = mix(original, smoothedSkin, mask)`. This ensures that smoothing is only applied to the areas defined by the skin mask.
-    4.  The shader also contains logic to switch to **Debug Views**, outputting just the mask, high-pass, or low-pass layer if requested.
--   **Output**: The final image is rendered to the main canvas visible to the user. The `u_transform` matrix is applied in the vertex shader at this stage to handle user pan and zoom.
+#### Pass 4: 最終合成與顯示
+這是最後的階段，所有先前生成的圖層將被組合起來並顯示在螢幕上。
+-   **輸入**: 原始紋理、低頻圖層紋理、皮膚遮罩紋理，以及來自 UI 的參數 (`detailAmount`, `viewMode`)。
+-   **著色器**: `finalFragmentShader.glsl`
+-   **處理流程**:
+    1.  即時計算高頻圖層：`highPass = original - lowFrequency`。
+    2.  計算平滑後的皮膚顏色：`smoothedSkin = lowFrequency + highPass * detailAmount`。
+    3.  使用遮罩將原始影像與平滑後的皮膚進行混合：`finalColor = mix(original, smoothedSkin, mask)`。這確保了平滑效果只應用於皮膚遮罩所定義的區域。
+    4.  著色器中也包含了切換至**除錯預覽 (Debug Views)** 的邏輯，可根據請求僅輸出遮罩、高頻或低頻圖層。
+-   **輸出**: 最終影像被渲染到使用者可見的主畫布上。在此階段，`u_transform` 矩陣會在頂點著色器中被應用，以處理使用者的平移和縮放操作。
 
-## 4. Viewport and Coordinate Systems
+## 4. 視口與座標系統
 
--   **Aspect Ratio Correction**: The application's canvas always matches the container's dimensions. To prevent image distortion, a transformation matrix (`u_transform`) is calculated. This matrix applies an aspect ratio correction factor, effectively letterboxing or pillarboxing the image so it's always displayed at its native aspect ratio.
--   **Pan & Zoom**: User interactions (mouse drag, wheel) update `scale`, `panX`, and `panY` state variables. These are then used to build the `u_transform` matrix, which is passed to the vertex shader during the final composition pass.
--   **Color Picking Coordinate Transformation**: To ensure accurate color picking at any zoom or pan level, the screen coordinates from a right-click event must be converted back to the original image's texture coordinates. This is achieved by calculating and applying the mathematical inverse of the `u_transform` matrix to the mouse's clip-space coordinates. This robustly maps the on-screen position back to the correct pixel on the source image.
+-   **長寬比校正**: 應用程式的畫布尺寸始終與其容器的尺寸相匹配。為防止影像變形，程式會計算一個變換矩陣 (`u_transform`)。此矩陣會應用一個長寬比校正因子，有效地在影像周圍添加黑邊 (letterboxing 或 pillarboxing)，使其始終以原始的長寬比顯示。
+-   **平移與縮放**: 使用者的互動 (滑鼠拖曳、滾輪) 會更新 `scale`、`panX` 和 `panY` 狀態變數。這些變數隨後被用來建構 `u_transform` 矩陣，並在最終的合成通道中傳遞給頂點著色器。
+-   **顏色拾取座標轉換**: 為了確保在任何縮放或平移級別下都能準確拾取顏色，來自右鍵點擊事件的螢幕座標必須被轉換回原始影像的紋理座標。這是透過計算並應用 `u_transform` 矩陣的**逆矩陣**到滑鼠的裁剪空間 (clip-space) 座標上來實現的。這個穩健的方法能將螢幕上的位置精確地映射回來源影像上的正確像素。
