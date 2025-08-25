@@ -617,7 +617,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
             window.electronAPI.onFolderSelected(this.start.bind(this));
             window.electronAPI.onImageSaved((filePath) => {
-                this.log(`✅ Saved: ${filePath.split('\').pop()}`);
+                this.log(`✅ Saved: ${filePath.split('\\').pop()}`);
                 this.processNext();
             });
             window.electronAPI.onBatchError((errorMessage) => {
@@ -663,7 +663,7 @@ document.addEventListener('DOMContentLoaded', () => {
             }
 
             const filePath = this.queue[this.currentIndex];
-            const fileName = filePath.split('\').pop();
+            const fileName = filePath.split('\\').pop();
             this.log(`Processing ${fileName} (${this.currentIndex + 1}/${this.queue.length})...`);
             this.updateProgressBar((this.currentIndex / this.queue.length) * 100);
 
