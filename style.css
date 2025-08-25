@@ -1,36 +1,44 @@
+/* :root 定義了全域 CSS 變數，方便統一管理顏色、字體等樣式 */
 :root {
+    /* 字體 */
     --font-sans: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
-    --primary-bg: #1e1e1e;
-    --secondary-bg: #2d2d2d;
-    --controls-bg: #252526;
-    --text-color: #cccccc;
-    --text-muted: #9e9e9e;
-    --accent-color: #0e639c;
-    --accent-hover: #1177bb;
-    --success-color: #2a9d8f;
-    --success-hover: #2ec4b6;
-    --warning-color: #e76f51;
-    --warning-hover: #f4a261;
-    --border-color: #3e3e42;
-    --shadow-color: rgba(0, 0, 0, 0.3);
-    --slider-track: #4a4a4a;
-    --slider-progress: var(--accent-color);
-    --slider-thumb: #d0d0d0;
-    --slider-thumb-hover: #ffffff;
+    
+    /* 主要顏色 */
+    --primary-bg: #1e1e1e;      /* 主背景色 (最底層) */
+    --secondary-bg: #2d2d2d;    /* 次要背景色 (畫布區) */
+    --controls-bg: #252526;     /* 控制項面板背景色 */
+    --text-color: #cccccc;      /* 主要文字顏色 */
+    --text-muted: #9e9e9e;      /* 輔助/提示文字顏色 */
+    --accent-color: #0e639c;     /* 強調色 (如按鈕) */
+    --accent-hover: #1177bb;    /* 強調色滑鼠懸停 */
+    --success-color: #2a9d8f;   /* 成功狀態顏色 (如儲存按鈕) */
+    --success-hover: #2ec4b6;   /* 成功狀態滑鼠懸停 */
+    --warning-color: #e76f51;   /* 警告/次要操作顏色 (如清除按鈕) */
+    --warning-hover: #f4a261;   /* 警告狀態滑鼠懸停 */
+    --border-color: #3e3e42;    /* 邊框顏色 */
+    --shadow-color: rgba(0, 0, 0, 0.3); /* 陰影顏色 */
+
+    /* 滑桿樣式 */
+    --slider-track: #4a4a4a;      /* 滑桿軌道顏色 */
+    --slider-progress: var(--accent-color); /* 滑桿進度顏色 (目前未使用) */
+    --slider-thumb: #d0d0d0;      /* 滑桿圓鈕顏色 */
+    --slider-thumb-hover: #ffffff;/* 滑桿圓鈕滑鼠懸停 */
 }
 
+/* 全局 body 樣式 */
 body {
     font-family: var(--font-sans);
     display: flex;
     justify-content: center;
     align-items: center;
-    height: 100vh;
+    height: 100vh; /* 佔滿整個視窗高度 */
     margin: 0;
     background-color: var(--primary-bg);
     color: var(--text-color);
-    overflow: hidden;
+    overflow: hidden; /* 防止出現滾動條 */
 }
 
+/* 主容器，包含畫布和控制項 */
 .main-container {
     display: flex;
     width: 100vw;
@@ -38,14 +46,16 @@ body {
     background-color: var(--secondary-bg);
 }
 
+/* 畫布容器 */
 .canvas-container {
-    flex-grow: 1;
+    flex-grow: 1; /* 佔據剩餘的所有空間 */
     display: flex;
     justify-content: center;
     align-items: center;
     padding: 0;
     overflow: hidden;
-    position: relative;
+    position: relative; /* 為子元素的絕對定位提供基準 */
+    /* 使用 CSS 漸層創建透明背景的棋盤格圖案 */
     background-image: linear-gradient(45deg, #2a2a2a 25%, transparent 25%), 
                       linear-gradient(-45deg, #2a2a2a 25%, transparent 25%),
                       linear-gradient(45deg, transparent 75%, #2a2a2a 75%),
@@ -54,31 +64,34 @@ body {
     background-position: 0 0, 0 10px, 10px -10px, -10px 0px;
 }
 
+/* WebGL 畫布 */
 #gl-canvas {
     max-width: none;
     max-height: none;
     border-radius: 0;
     border: none;
     box-shadow: 0 15px 40px var(--shadow-color);
-    cursor: grab;
+    cursor: grab; /* 預設滑鼠手勢為 "可抓取" */
 }
 
 #gl-canvas:active {
-    cursor: grabbing;
+    cursor: grabbing; /* 按下時的滑鼠手勢為 "抓取中" */
 }
 
+/* 右側控制項容器 */
 .controls-container {
     width: 320px;
-    flex-shrink: 0;
+    flex-shrink: 0; /* 防止容器被壓縮 */
     background-color: var(--controls-bg);
     padding: 1.25rem;
     box-sizing: border-box;
     display: flex;
-    flex-direction: column;
+    flex-direction: column; /* 垂直佈局 */
     border-left: 1px solid var(--border-color);
-    overflow-y: auto;
+    overflow-y: auto; /* 當內容超出時顯示垂直滾動條 */
 }
 
+/* 標題樣式 */
 h2 {
     display: flex;
     align-items: center;
@@ -92,6 +105,7 @@ h2 {
     color: var(--text-color);
 }
 
+/* 控制項分組 */
 .control-group {
     margin-bottom: 1.25rem;
 }
@@ -104,6 +118,7 @@ h2 {
     color: var(--text-muted);
 }
 
+/* 操作說明文字 */
 .instructions {
     font-size: 0.8rem;
     color: var(--text-muted);
@@ -111,6 +126,7 @@ h2 {
     margin-bottom: 1.25rem;
 }
 
+/* 膚色樣本容器 */
 .color-swatches {
     display: flex;
     flex-wrap: wrap;
@@ -120,18 +136,20 @@ h2 {
     border-bottom: 1px solid var(--border-color);
 }
 
+/* 膚色樣本圓點 */
 .swatch {
     width: 28px;
     height: 28px;
-    border-radius: 50%;
+    border-radius: 50%; /* 圓形 */
     border: 2px solid #fff;
     box-shadow: 0 2px 5px var(--shadow-color);
     transition: transform 0.2s;
 }
 .swatch:hover {
-    transform: scale(1.1);
+    transform: scale(1.1); /* 滑鼠懸停時放大 */
 }
 
+/* 按鈕群組 */
 .button-group {
     display: flex;
     flex-direction: column;
@@ -141,6 +159,7 @@ h2 {
     border-top: 1px solid var(--border-color);
 }
 
+/* 通用按鈕樣式 */
 button {
     display: flex;
     align-items: center;
@@ -157,10 +176,11 @@ button {
 }
 
 button:hover {
-    transform: translateY(-2px);
+    transform: translateY(-2px); /* 滑鼠懸停時輕微上移 */
     box-shadow: 0 4px 10px rgba(0,0,0,0.2);
 }
 
+/* 特定按鈕顏色 */
 #load-btn { background-color: var(--accent-color); }
 #load-btn:hover { background-color: var(--accent-hover); }
 #save-btn { background-color: var(--success-color); }
@@ -171,6 +191,7 @@ button:hover {
 }
 .button-secondary:hover { background-color: var(--warning-hover); }
 
+/* 單選按鈕群組 */
 .radio-group div {
     margin-bottom: 8px;
 }
@@ -191,18 +212,21 @@ button:hover {
     background-color: rgba(255,255,255,0.05);
 }
 
+/* 隱藏原始的 radio input */
 .radio-group input[type="radio"] { 
     display: none; 
 }
 
+/* 當 radio 被選中時，其後面的 label 的樣式 */
 .radio-group input[type="radio"]:checked + label {
     color: white;
     border-color: var(--accent-color);
     background-color: rgba(0, 123, 255, 0.1);
 }
 
+/* 自訂範圍滑桿樣式 */
 input[type="range"] {
-    -webkit-appearance: none;
+    -webkit-appearance: none; /* 移除 WebKit 的預設樣式 */
     appearance: none;
     width: 100%;
     height: 8px;
@@ -210,6 +234,7 @@ input[type="range"] {
     border-radius: 4px;
     outline: none;
 }
+/* 自訂滑桿的圓鈕 (thumb) */
 input[type="range"]::-webkit-slider-thumb {
     -webkit-appearance: none;
     appearance: none;
@@ -226,14 +251,15 @@ input[type="range"]::-webkit-slider-thumb:hover {
     transform: scale(1.1);
 }
 
+/* 響應式設計：當視窗寬度小於 1000px 時 */
 @media (max-width: 1000px) {
     .main-container {
-        flex-direction: column;
+        flex-direction: column; /* 改為垂直佈局 */
     }
     .controls-container {
         width: 100%;
         height: auto;
-        max-height: 50vh;
+        max-height: 50vh; /* 控制項面板最大高度為視窗的一半 */
         border-left: none;
         border-top: 1px solid var(--border-color);
     }
@@ -243,6 +269,7 @@ input[type="range"]::-webkit-slider-thumb:hover {
     }
 }
 
+/* 遮罩預覽視窗 */
 .preview-container {
     position: absolute;
     top: 20px;
@@ -257,15 +284,15 @@ input[type="range"]::-webkit-slider-thumb:hover {
     flex-direction: column;
     align-items: center;
     justify-content: center;
-    backdrop-filter: blur(5px);
+    backdrop-filter: blur(5px); /* 毛玻璃效果 */
     box-shadow: 0 4px 15px rgba(0, 0, 0, 0.4);
-    z-index: 10;
+    z-index: 10; /* 確保在最上層 */
 }
 
 #mask-preview-canvas {
     width: 100%;
     height: calc(100% - 25px);
-    object-fit: contain;
+    object-fit: contain; /* 保持長寬比 */
 }
 
 .preview-container p {
@@ -280,7 +307,7 @@ input[type="range"]::-webkit-slider-thumb:hover {
     box-sizing: border-box;
 }
 
-/* Batch Processing Panel Styles */
+/* 批次處理面板樣式 */
 .batch-progress {
     margin-top: 0.5rem;
 }
@@ -299,9 +326,10 @@ input[type="range"]::-webkit-slider-thumb:hover {
     height: 100%;
     background-color: var(--success-color);
     border-radius: 4px;
-    transition: width 0.2s ease-in-out;
+    transition: width 0.2s ease-in-out; /* 進度條寬度變化動畫 */
 }
 
+/* 日誌區域 */
 .log-area {
     background-color: var(--primary-bg);
     border: 1px solid var(--border-color);
@@ -309,13 +337,14 @@ input[type="range"]::-webkit-slider-thumb:hover {
     padding: 0.75rem;
     height: 120px;
     overflow-y: auto;
-    font-family: 'SF Mono', 'Courier New', Courier, monospace;
+    font-family: 'SF Mono', 'Courier New', Courier, monospace; /* 等寬字體 */
     font-size: 0.8rem;
     color: var(--text-muted);
-    white-space: pre-wrap;
+    white-space: pre-wrap; /* 自動換行 */
     word-wrap: break-word;
 }
 
+/* 批次處理按鈕 */
 #batch-btn { 
     background-color: #6c757d; 
 }

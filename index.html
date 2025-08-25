@@ -2,77 +2,95 @@
 <html>
 <head>
     <meta charset="UTF-8">
-    <title>Skin Retoucher Pro</title>
+    <title>Skin Retoucher Pro - 專業膚質修飾工具</title>
+    <!-- 引入 Google Fonts 以提供更好的字體顯示 -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+    <!-- 連結主要的 CSS 樣式表 -->
     <link rel="stylesheet" href="style.css">
 </head>
 <body>
+    <!-- 主容器，採用 flex 佈局 -->
     <div class="main-container">
+        <!-- 左側畫布容器 -->
         <div class="canvas-container">
+            <!-- WebGL 主畫布，用於顯示和操作圖片 -->
             <canvas id="gl-canvas"></canvas>
+            <!-- 右下角的預覽小視窗 -->
             <div class="preview-container">
+                <!-- 用於顯示膚色遮罩的 2D 畫布 -->
                 <canvas id="mask-preview-canvas"></canvas>
-                <p>Skin Mask Preview</p>
+                <p>膚色遮罩預覽</p>
             </div>
         </div>
+        <!-- 右側控制項容器 -->
         <div class="controls-container">
-            <h2>⚙️ Processing</h2>
+            <!-- 處理參數區 -->
+            <h2>⚙️ 處理參數</h2>
             <div class="control-group">
-                <label for="radius-slider">✨ Smoothness: <span id="radius-value">10</span></label>
+                <label for="radius-slider">✨ 平滑度: <span id="radius-value">10</span></label>
                 <input type="range" id="radius-slider" min="0" max="100" value="10" step="0.1">
             </div>
             <div class="control-group">
-                <label for="detail-slider">🔍 Detail Amount: <span id="detail-value">70</span>%</label>
+                <label for="detail-slider">🔍 細節保留: <span id="detail-value">70</span>%</label>
                 <input type="range" id="detail-slider" min="0" max="100" value="70" step="1">
             </div>
 
-            <h2>🎨 Skin Tone Selection</h2>
-            <p class="instructions">Right-click on the image to select up to 10 skin tones.</p>
+            <!-- 膚色選取區 -->
+            <h2>🎨 膚色選取</h2>
+            <p class="instructions">在圖片上按「右鍵」選取最多10個膚色樣本。</p>
             <div class="control-group">
-                <label for="tolerance-slider">💧 Color Tolerance: <span id="tolerance-value">20</span></label>
+                <label for="tolerance-slider">💧 顏色容差: <span id="tolerance-value">20</span></label>
                 <input type="range" id="tolerance-slider" min="0" max="100" value="20" step="1">
             </div>
+            <!-- 用於顯示已選顏色樣本的容器 -->
             <div class="color-swatches" id="color-swatches"></div>
-            <button id="clear-colors-btn" class="button-secondary">🗑️ Clear Tones</button>
+            <button id="clear-colors-btn" class="button-secondary">🗑️ 清除選取</button>
 
-            <h2>🐛 Debug View</h2>
+            <!-- 除錯檢視區 -->
+            <h2>🐛 除錯檢視</h2>
             <div class="control-group radio-group" id="view-mode-group">
                 <div>
                     <input type="radio" id="view-final" name="view-mode" value="final" checked>
-                    <label for="view-final">Final Result</label>
+                    <label for="view-final">最終結果</label>
                 </div>
                 <div>
                     <input type="radio" id="view-high" name="view-mode" value="high">
-                    <label for="view-high">High Frequency</label>
+                    <label for="view-high">高頻層 (紋理)</label>
                 </div>
                 <div>
                     <input type="radio" id="view-low" name="view-mode" value="low">
-                    <label for="view-low">Low Frequency</label>
+                    <label for="view-low">低頻層 (顏色)</label>
                 </div>
             </div>
 
+            <!-- 批次處理控制區 -->
             <div id="batch-controls-container" style="border-top: 1px solid var(--border-color); padding-top: 1rem; margin-top: auto;">
-                <h2>📦 Batch Processing</h2>
-                <p class="instructions" id="batch-instructions">Select multiple images to start a batch process.</p>
+                <h2>📦 批次處理</h2>
+                <p class="instructions" id="batch-instructions">選取多張圖片以開始批次處理。</p>
+                <!-- 進度顯示容器，預設隱藏 -->
                 <div class="batch-progress" id="batch-progress" style="display: none;">
                     <div class="progress-bar-container">
                         <div class="progress-bar" id="batch-progress-bar"></div>
                     </div>
+                    <!-- 用於顯示處理日誌的文字區域 -->
                     <pre class="log-area" id="batch-log"></pre>
                 </div>
-                <button id="start-batch-btn" style="display: none; margin-top: 0.5rem;" disabled>✨ Start Batch Retouch</button>
+                <button id="start-batch-btn" style="display: none; margin-top: 0.5rem;" disabled>✨ 開始批次修飾</button>
             </div>
 
+            <!-- 主要操作按鈕群組 -->
             <div class="button-group">
-                <button id="load-btn">📂 Load Image</button>
-                <button id="save-btn">💾 Save Image</button>
-                <button id="batch-btn">📂 Select Images for Batch</button>
+                <button id="load-btn">📂 載入圖片</button>
+                <button id="save-btn">💾 儲存圖片</button>
+                <button id="batch-btn">📂 選擇批次圖片</button>
             </div>
         </div>
     </div>
+    <!-- 隱藏的檔案輸入元素，用於觸發檔案選擇對話方塊 -->
     <input type="file" id="file-input" accept="image/*" style="display: none;">
+    <!-- 引入渲染程序的主腳本，type="module" 表示使用 ES6 模組 -->
     <script type="module" src="renderer.js"></script>
 </body>
 </html>
