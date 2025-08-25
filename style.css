@@ -71,7 +71,7 @@ body {
     width: 320px;
     flex-shrink: 0;
     background-color: var(--controls-bg);
-    padding: 1rem; /* Further reduced padding */
+    padding: 1rem 1.25rem; /* Reduced vertical padding */
     box-sizing: border-box;
     display: flex;
     flex-direction: column;
@@ -84,21 +84,21 @@ h2 {
     align-items: center;
     gap: 0.5rem;
     margin-top: 0;
-    margin-bottom: 0.75rem; /* Further reduced margin */
+    margin-bottom: 0.6rem; /* Drastically reduced margin */
     border-bottom: 1px solid var(--border-color);
-    padding-bottom: 0.5rem; /* Further reduced padding */
+    padding-bottom: 0.6rem; /* Drastically reduced padding */
     font-weight: 600;
-    font-size: 0.9rem; /* Slightly smaller font */
+    font-size: 0.9rem; 
     color: var(--text-color);
 }
 
 .control-group {
-    margin-bottom: 0.75rem; /* Significantly reduced margin */
+    margin-bottom: 0.6rem; /* Drastically reduced margin */
 }
 
 .control-group label {
     display: block;
-    margin-bottom: 0.75rem;
+    margin-bottom: 0.5rem; /* Reduced margin */
     font-size: 0.875rem;
     font-weight: 500;
     color: var(--text-muted);
@@ -107,22 +107,22 @@ h2 {
 .instructions {
     font-size: 0.8rem;
     color: var(--text-muted);
-    margin-top: -1rem;
-    margin-bottom: 1.25rem;
+    margin-top: -0.5rem; /* Reduced margin */
+    margin-bottom: 0.75rem; /* Reduced margin */
 }
 
 .color-swatches {
     display: flex;
     flex-wrap: wrap;
-    gap: 10px;
-    margin-bottom: 1.5rem;
-    padding-bottom: 1.5rem;
+    gap: 8px; /* Reduced gap */
+    margin-bottom: 0.75rem; /* Reduced margin */
+    padding-bottom: 0.75rem; /* Reduced padding */
     border-bottom: 1px solid var(--border-color);
 }
 
 .swatch {
-    width: 28px;
-    height: 28px;
+    width: 26px; /* Slightly smaller */
+    height: 26px;
     border-radius: 50%;
     border: 2px solid #fff;
     box-shadow: 0 2px 5px var(--shadow-color);
@@ -135,9 +135,9 @@ h2 {
 .button-group {
     display: flex;
     flex-direction: column;
-    gap: 0.75rem;
+    gap: 0.5rem; /* Reduced gap */
     margin-top: auto;
-    padding-top: 1rem;
+    padding-top: 0.75rem; /* Reduced padding */
 }
 
 button {
@@ -145,12 +145,12 @@ button {
     align-items: center;
     justify-content: center;
     gap: 0.5rem;
-    padding: 0.8rem 1.25rem;
+    padding: 0.7rem 1.25rem; /* Reduced padding */
     border: none;
-    border-radius: 8px;
+    border-radius: 6px; /* Slightly smaller radius */
     color: white;
     cursor: pointer;
-    font-size: 0.9375rem;
+    font-size: 0.9rem; /* Slightly smaller font */
     font-weight: 600;
     transition: all 0.2s ease;
 }
@@ -166,12 +166,12 @@ button:hover {
 #save-btn:hover { background-color: var(--success-hover); }
 .button-secondary {
     background-color: var(--warning-color);
-    margin-bottom: 1.5rem;
+    margin-bottom: 0.75rem; /* Reduced margin */
 }
 .button-secondary:hover { background-color: var(--warning-hover); }
 
 .radio-group div {
-    margin-bottom: 8px; /* Add some space between options */
+    margin-bottom: 4px; /* Reduced margin */
 }
 
 .radio-group label {
