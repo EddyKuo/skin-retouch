@@ -253,8 +253,96 @@ function handleContextMenu(event) {
 
 function handleSave() {
     if (!image) return;
-    alert("Saving the current view. For a full-resolution save, please zoom out to 100%. A more advanced save feature is pending.");
-    const dataUrl = canvas.toDataURL('image/png');
+
+    // --- Full Resolution Save Logic ---
+
+    // 1. Create a temporary FBO to render the full-size image to.
+    const finalFBO = gl.createFramebuffer();
+    gl.bindFramebuffer(gl.FRAMEBUFFER, finalFBO);
+    const finalTexture = createAndSetupTexture(gl, image.width, image.height);
+    gl.framebufferTexture2D(gl.FRAMEBUFFER, gl.COLOR_ATTACHMENT0, gl.TEXTURE_2D, finalTexture, 0);
+
+    // 2. Temporarily set the viewport to the image's full resolution.
+    gl.viewport(0, 0, image.width, image.height);
+
+    // 3. Run the entire rendering pipeline, targeting the FBO.
+    // We use an identity matrix for the transform to ignore pan & zoom.
+    const identityMatrix = [1,0,0,0, 0,1,0,0, 0,0,1,0, 0,0,0,1];
+    
+    // Pass 1: Skin Mask
+    gl.bindFramebuffer(gl.FRAMEBUFFER, framebuffers[2]);
+    gl.useProgram(maskProgram);
+    gl.uniformMatrix4fv(gl.getUniformLocation(maskProgram, 'u_transform'), false, identityMatrix);
+    // ... (rest of mask uniforms are already set)
+    gl.activeTexture(gl.TEXTURE0);
+    gl.bindTexture(gl.TEXTURE_2D, originalTexture);
+    draw(maskProgram);
+
+    // Pass 2 & 3: Gaussian Blur
+    gl.bindFramebuffer(gl.FRAMEBUFFER, framebuffers[0]); // H-Blur
+    gl.useProgram(blurProgram);
+    gl.uniformMatrix4fv(gl.getUniformLocation(blurProgram, 'u_transform'), false, identityMatrix);
+    gl.uniform2f(gl.getUniformLocation(blurProgram, 'u_dir'), 1, 0);
+    gl.bindTexture(gl.TEXTURE_2D, originalTexture);
+    draw(blurProgram);
+
+    gl.bindFramebuffer(gl.FRAMEBUFFER, framebuffers[1]); // V-Blur
+    gl.useProgram(blurProgram);
+    gl.uniformMatrix4fv(gl.getUniformLocation(blurProgram, 'u_transform'), false, identityMatrix);
+    gl.uniform2f(gl.getUniformLocation(blurProgram, 'u_dir'), 0, 1);
+    gl.activeTexture(gl.TEXTURE0);
+    gl.bindTexture(gl.TEXTURE_2D, textures[0]);
+    draw(blurProgram);
+
+    // Pass 4: Final Composite to our temporary FBO
+    gl.bindFramebuffer(gl.FRAMEBUFFER, finalFBO);
+    gl.useProgram(finalProgram);
+    gl.uniformMatrix4fv(gl.getUniformLocation(finalProgram, 'u_transform'), false, identityMatrix);
+    gl.uniform1i(gl.getUniformLocation(finalProgram, 'u_viewMode'), 0); // Force final view
+    // ... (rest of final program uniforms are set)
+    gl.activeTexture(gl.TEXTURE0);
+    gl.bindTexture(gl.TEXTURE_2D, originalTexture);
+    gl.activeTexture(gl.TEXTURE1);
+    gl.bindTexture(gl.TEXTURE_2D, textures[1]);
+    gl.activeTexture(gl.TEXTURE2);
+    gl.bindTexture(gl.TEXTURE_2D, textures[2]);
+    draw(finalProgram);
+
+    // 4. Read the pixel data from the FBO.
+    const pixels = new Uint8Array(image.width * image.height * 4);
+    gl.readPixels(0, 0, image.width, image.height, gl.RGBA, gl.UNSIGNED_BYTE, pixels);
+
+    // 5. Clean up WebGL resources.
+    gl.bindFramebuffer(gl.FRAMEBUFFER, null);
+    gl.deleteFramebuffer(finalFBO);
+    gl.deleteTexture(finalTexture);
+
+    // 6. Restore the viewport to the canvas size for normal display.
+    gl.viewport(0, 0, canvas.width, canvas.height);
+
+    // 7. Use a 2D canvas to convert the raw pixel data to a PNG.
+    const tempCanvas = document.createElement('canvas');
+    tempCanvas.width = image.width;
+    tempCanvas.height = image.height;
+    const tempCtx = tempCanvas.getContext('2d');
+    const imageData = tempCtx.createImageData(image.width, image.height);
+    
+    // Flip the image vertically as WebGL's origin is bottom-left.
+    const data = imageData.data;
+    for (let i = 0; i < image.height; i++) {
+        for (let j = 0; j < image.width; j++) {
+            const srcIndex = (i * image.width + j) * 4;
+            const destIndex = ((image.height - 1 - i) * image.width + j) * 4;
+            data[destIndex] = pixels[srcIndex];
+            data[destIndex + 1] = pixels[srcIndex + 1];
+            data[destIndex + 2] = pixels[srcIndex + 2];
+            data[destIndex + 3] = pixels[srcIndex + 3];
+        }
+    }
+    tempCtx.putImageData(imageData, 0, 0);
+
+    // 8. Get the Base64 data and send it to the main process.
+    const dataUrl = tempCanvas.toDataURL('image/png');
     const base64Data = dataUrl.replace(/^data:image\/png;base64,/, "");
     window.electronAPI.saveImage({ data: base64Data });
 }
