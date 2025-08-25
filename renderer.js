@@ -136,10 +136,6 @@ const finalFragmentShaderSource = `
         vec4 blurred = texture2D(u_blurredImage, v_texCoord);
         float mask = texture2D(u_skinMask, v_texCoord).r;
 
-        if (u_viewMode == 1) { // Skin Mask
-            gl_FragColor = vec4(vec3(mask), 1.0);
-            return;
-        }
         vec3 highPass = original.rgb - blurred.rgb;
         if (u_viewMode == 2) { // High Frequency
             gl_FragColor = vec4(highPass + 0.5, 1.0);
@@ -483,7 +479,7 @@ function render() {
     
     gl.useProgram(finalProgram);
     gl.uniformMatrix4fv(gl.getUniformLocation(finalProgram, 'u_transform'), false, transformMatrix);
-    const viewModeMap = { 'final': 0, 'mask': 1, 'high': 2, 'low': 3 };
+    const viewModeMap = { 'final': 0, 'high': 2, 'low': 3 };
     gl.uniform1i(gl.getUniformLocation(finalProgram, 'u_viewMode'), viewModeMap[currentViewMode]);
     gl.uniform1f(gl.getUniformLocation(finalProgram, 'u_detailAmount'), detailAmount);
     
