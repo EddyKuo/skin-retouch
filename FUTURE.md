@@ -1,59 +1,60 @@
-# Future Development Roadmap
+# 未來開發藍圖
 
-This document outlines potential new features and improvements to enhance the capabilities of the Skin Retoucher Pro application. These are organized by priority and complexity.
+本文件概述了為增強 Skin Retoucher Pro 應用程式功能而規劃的潛在新功能與改進。這些項目依據優先級與複雜度進行組織。
 
-## High Priority Features
+## 高優先級功能
 
-### 1. 🖌️ Healing & Cloning Brush
--   **Description**: A brush-based tool to remove small imperfections like blemishes, spots, or stray hairs. The tool would intelligently sample surrounding textures and tones to seamlessly blend the corrected area.
--   **User Interface**:
-    -   Add a "Healing Brush" tool to the control panel.
-    -   Provide sliders for `Brush Size` and `Brush Hardness`.
--   **Technical Implementation**:
-    -   Requires a "ping-pong" framebuffer system to apply brush strokes iteratively.
-    -   A new GLSL fragment shader (`healingFragmentShader`) would need to be developed to handle the texture sampling and blending logic (e.g., averaging, Poisson blending).
+### 1. 🖌️ 修復與仿製筆刷 (Healing & Cloning Brush)
+-   **功能描述**: 一種基於筆刷的工具，用於移除如痘痘、斑點或雜亂毛髮等微小瑕疵。此工具將智慧地取樣周圍的紋理與色調，以無縫地混合修正區域。
+-   **使用者介面**:
+    -   在控制面板中新增「修復筆刷」工具。
+    -   提供 `筆刷尺寸` 和 `筆刷硬度` 的滑桿。
+-   **技術實現**:
+    -   需要一個「乒乓」(ping-pong) 幀緩衝區系統來迭代地應用筆刷筆觸。
+    -   需要開發一個新的 GLSL 片段著色器 (`healingFragmentShader`) 來處理紋理取樣與混合邏輯 (例如，平均值混合、泊松融合等)。
 
-### 2. ✨ Dodge & Burn Tool
--   **Description**: Non-destructive brush tools to manually lighten (Dodge) or darken (Burn) specific areas of the image. This is essential for enhancing contours, depth, and facial structure.
--   **User Interface**:
-    -   Add "Dodge" and "Burn" tool modes.
-    -   Provide a slider for `Exposure` or `Strength` to control the intensity of the effect.
--   **Technical Implementation**:
-    -   Utilizes the same ping-pong framebuffer system as the healing brush.
-    -   The `dodgeAndBurnShader` would apply a simple multiplicative color adjustment based on the brush's position and strength.
+### 2. ✨ 加亮與加深工具 (Dodge & Burn Tool)
+-   **功能描述**: 非破壞性的筆刷工具，用於手動提亮 (Dodge) 或壓暗 (Burn) 影像的特定區域。這對於增強輪廓、深度和臉部結構至關重要。
+-   **使用者介面**:
+    -   新增「加亮」與「加深」工具模式。
+    -   提供 `曝光度` 或 `強度` 的滑桿來控制效果的強度。
+-   **技術實現**:
+    -   利用與修復筆刷相同的乒乓幀緩衝區系統。
+    -   `dodgeAndBurnShader` 將根據筆刷的位置和強度，應用一個簡單的乘法顏色調整。
 
-## Medium Priority Features
+## 中優先級功能
 
-### 3. 🎨 Advanced Color Correction
--   **Description**: Tools to correct and unify skin tones across different areas of the face. This would allow users to reduce redness, neutralize yellow casts, or generally even out the complexion.
--   **User Interface**:
-    -   Add a new panel for "Color Correction".
-    -   Include targeted sliders like `Red Hue Shift`, `Yellow Saturation`, etc.
--   **Technical Implementation**:
-    -   Can be implemented as an additional pass in the final composition shader.
-    -   The `colorCorrectionShader` would perform color transformations in HSV/HSL space on pixels that fall within a specific color range.
+### 3. 🎨 進階色彩校正 (Advanced Color Correction)
+-   **功能描述**: 用於校正和統一臉部不同區域膚色的工具。這將允許使用者減少紅斑、中和黃疸，或整體上均勻膚色。
+-   **使用者介面**:
+    -   新增一個「色彩校正」面板。
+    -   包含如 `紅色色相偏移`、`黃色飽和度` 等目標性滑桿。
+-   **技術實現**:
+    -   可以作為最終合成著色器中的一個額外通道來實現。
+    -   `colorCorrectionShader` 將在 HSV/HSL 色彩空間中，對落在特定顏色範圍內的像素執行顏色轉換。
 
-### 4. 👁️ Localized Sharpening Brush
--   **Description**: A brush tool to apply sharpening selectively to specific features like eyes, eyebrows, and lips, making them pop without affecting the skin's softness.
--   **User Interface**:
-    -   Add a "Sharpening Brush" tool.
-    -   Provide a slider for `Strength` or `Amount`.
--   **Technical Implementation**:
-    -   Uses the ping-pong framebuffer system.
-    -   The `sharpeningShader` would implement an Unsharp Mask algorithm, enhancing local contrast based on the brush's position.
+### 4. 👁️ 局部銳化筆刷 (Localized Sharpening Brush)
+-   **功能描述**: 一種筆刷工具，用於選擇性地對特定特徵（如眼睛、眉毛和嘴唇）應用銳化，使它們更加突出，而不影響皮膚的柔和度。
+-   **使用者介面**:
+    -   新增「銳化筆刷」工具。
+    -   提供 `強度` 或 `數量` 的滑桿。
+-   **技術實現**:
+    -   使用乒乓幀緩衝區系統。
+    -   `sharpeningShader` 將實現一個非銳化遮罩 (Unsharp Mask) 演算法，根據筆刷位置增強局部對比度。
 
-## Quality of Life & Architectural Improvements
+## 批次處理與架構改進
 
-### 5. 💾 Advanced Save Options
--   **Description**: Implement a true offscreen rendering pipeline for saving files. This would ensure that the output is always the full, original resolution of the image, regardless of the current zoom or pan state in the viewport.
--   **Technical Implementation**:
-    -   Create a dedicated offscreen canvas and WebGL context when the save button is clicked.
-    -   Re-run the entire processing pipeline on this offscreen context at full resolution.
-    -   Extract the final image data from the offscreen canvas.
+### 5. 📦 批次處理功能增強 (Batch Processing Enhancements)
+-   **功能描述**: 擴充現有的批次處理功能，提供更多彈性與控制。
+-   **未來規劃**:
+    -   **支援更多格式**: 新增對 HEIC, TIFF, DNG 等專業格式的讀取支援。
+    -   **自訂命名規則**: 允許使用者定義輸出檔案的命名範本，例如添加前綴、後綴或日期。
+    -   **處理報告**: 在所有圖片處理完成後，生成一個簡單的報告，總結成功、失敗的檔案數量及可能發生的錯誤。
+    -   **並行處理**: 探索使用多個背景 Worker 來並行處理圖片，以提升在多核心 CPU 上的處理速度。
 
-### 6. ↩️ Undo/Redo History
--   **Description**: Implement a state management system to track user actions (e.g., slider adjustments, color selections, brush strokes). This would allow users to undo and redo their changes.
--   **Technical Implementation**:
-    -   Requires creating a "history stack" (an array of state objects).
-    -   Each significant user action would push a new state object onto the stack.
-    -   "Undo" would pop from the stack and restore the previous state, while "Redo" would move forward. This would be a significant architectural change.
+### 6. ↩️ 復原/重做歷史記錄 (Undo/Redo History)
+-   **功能描述**: 實現一個狀態管理系統，以追蹤使用者的操作（例如，滑桿調整、顏色選擇、筆刷筆觸）。這將允許使用者復原和重做他們的變更。
+-   **技術實現**:
+    -   需要建立一個「歷史堆疊」(一個儲存狀態物件的陣列)。
+    -   每個重要的使用者操作都會將一個新的狀態物件推入堆疊。
+    -   「復原」將從堆疊中彈出並恢復前一個狀態，而「重做」則會前進。這將會是一個重大的架構性變更。
