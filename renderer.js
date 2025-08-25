@@ -617,7 +617,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
             window.electronAPI.onFolderSelected(this.start.bind(this));
             window.electronAPI.onImageSaved((filePath) => {
-                this.log(`✅ Saved: ${filePath.split('\\').pop()}`);
+                this.log(`✅ Saved: ${filePath.split('\').pop()}`);
                 this.processNext();
             });
             window.electronAPI.onBatchError((errorMessage) => {
@@ -663,7 +663,7 @@ document.addEventListener('DOMContentLoaded', () => {
             }
 
             const filePath = this.queue[this.currentIndex];
-            const fileName = filePath.split('\\').pop();
+            const fileName = filePath.split('\').pop();
             this.log(`Processing ${fileName} (${this.currentIndex + 1}/${this.queue.length})...`);
             this.updateProgressBar((this.currentIndex / this.queue.length) * 100);
 
@@ -767,13 +767,30 @@ document.addEventListener('DOMContentLoaded', () => {
         updateUI(isProcessing) {
             const batchProgressContainer = document.getElementById('batch-progress');
             const batchBtn = document.getElementById('batch-btn');
+            const startBatchBtn = document.getElementById('start-batch-btn');
+            const batchInstructions = document.getElementById('batch-instructions');
+
             batchProgressContainer.style.display = isProcessing ? 'block' : 'none';
             batchBtn.disabled = isProcessing;
-            batchBtn.textContent = isProcessing ? 'Processing...' : '📦 Batch Process';
+            startBatchBtn.disabled = isProcessing;
+            startBatchBtn.style.display = this.queue.length > 0 ? 'block' : 'none';
+
+            if (isProcessing) {
+                batchBtn.textContent = 'Processing...';
+                startBatchBtn.textContent = 'Processing...';
+            } else {
+                batchBtn.textContent = '📂 Select Images for Batch';
+                startBatchBtn.textContent = '✨ Start Batch Retouch';
+                if (this.queue.length === 0) {
+                     startBatchBtn.style.display = 'none';
+                     batchInstructions.textContent = 'Select multiple images to start a batch process.';
+                }
+            }
         },
 
         log(message) {
             const batchLog = document.getElementById('batch-log');
+            if(this.currentIndex === 0) batchLog.textContent = ''; // Clear log on new batch start
             batchLog.textContent += message + '\n';
             batchLog.scrollTop = batchLog.scrollHeight;
         },

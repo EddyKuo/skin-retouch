@@ -54,25 +54,14 @@ ipcMain.on('save-image', async (event, { data }) => {
 
 ipcMain.on('open-folder-dialog', async (event) => {
   const { filePaths } = await dialog.showOpenDialog({
-    properties: ['openDirectory']
+    properties: ['openFile', 'multiSelections'],
+    filters: [
+      { name: 'Images', extensions: ['jpg', 'jpeg', 'png', 'webp'] }
+    ]
   });
 
   if (filePaths && filePaths.length > 0) {
-    const folderPath = filePaths[0];
-    fs.readdir(folderPath, (err, files) => {
-      if (err) {
-        console.error('Failed to read directory:', err);
-        event.sender.send('batch-error', 'Failed to read the selected folder.');
-        return;
-      }
-
-      const imageExtensions = ['.jpg', '.jpeg', '.png', '.webp'];
-      const imageFiles = files
-        .filter(file => imageExtensions.includes(path.extname(file).toLowerCase()))
-        .map(file => path.join(folderPath, file));
-
-      event.sender.send('folder-selected', imageFiles);
-    });
+    event.sender.send('folder-selected', filePaths);
   }
 });
 

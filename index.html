@@ -55,18 +55,20 @@
 
             <div id="batch-controls-container" style="border-top: 1px solid var(--border-color); padding-top: 1rem; margin-top: auto;">
                 <h2>📦 Batch Processing</h2>
+                <p class="instructions" id="batch-instructions">Select multiple images to start a batch process.</p>
                 <div class="batch-progress" id="batch-progress" style="display: none;">
                     <div class="progress-bar-container">
                         <div class="progress-bar" id="batch-progress-bar"></div>
                     </div>
                     <pre class="log-area" id="batch-log"></pre>
                 </div>
+                <button id="start-batch-btn" style="display: none; margin-top: 0.5rem;" disabled>✨ Start Batch Retouch</button>
             </div>
 
             <div class="button-group">
                 <button id="load-btn">📂 Load Image</button>
                 <button id="save-btn">💾 Save Image</button>
-                <button id="batch-btn">📦 Batch Process</button>
+                <button id="batch-btn">📂 Select Images for Batch</button>
             </div>
         </div>
     </div>
