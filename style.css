@@ -71,7 +71,7 @@ body {
     width: 320px;
     flex-shrink: 0;
     background-color: var(--controls-bg);
-    padding: 1.25rem; /* Reduced padding */
+    padding: 1rem; /* Further reduced padding */
     box-sizing: border-box;
     display: flex;
     flex-direction: column;
@@ -84,16 +84,16 @@ h2 {
     align-items: center;
     gap: 0.5rem;
     margin-top: 0;
-    margin-bottom: 1rem; /* Reduced margin */
+    margin-bottom: 0.75rem; /* Further reduced margin */
     border-bottom: 1px solid var(--border-color);
-    padding-bottom: 0.75rem; /* Reduced padding */
+    padding-bottom: 0.5rem; /* Further reduced padding */
     font-weight: 600;
-    font-size: 1rem;
+    font-size: 0.9rem; /* Slightly smaller font */
     color: var(--text-color);
 }
 
 .control-group {
-    margin-bottom: 1.25rem; /* Reduced margin */
+    margin-bottom: 0.75rem; /* Significantly reduced margin */
 }
 
 .control-group label {
