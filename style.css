@@ -214,7 +214,7 @@ button:hover {
     transform: translateY(-50%) scale(0);
     width: 8px;
     height: 8px;
-    background-color: var(--accent-color);
+    background-color: white; /* Changed to white for contrast */
     border-radius: 50%;
     transition: transform 0.2s ease-in-out;
 }
