@@ -80,10 +80,10 @@ body {
 
 /* 右側控制項容器 */
 .controls-container {
-    width: 320px;
+    width: 300px; /* 稍微變窄 */
     flex-shrink: 0; /* 防止容器被壓縮 */
     background-color: var(--controls-bg);
-    padding: 1.25rem;
+    padding: 1rem; /* 減少內邊距 */
     box-sizing: border-box;
     display: flex;
     flex-direction: column; /* 垂直佈局 */
@@ -97,9 +97,9 @@ h2 {
     align-items: center;
     gap: 0.5rem;
     margin-top: 0;
-    margin-bottom: 1rem;
+    margin-bottom: 0.75rem; /* 減少底部邊距 */
     border-bottom: 1px solid var(--border-color);
-    padding-bottom: 0.75rem;
+    padding-bottom: 0.5rem; /* 減少底部內邊距 */
     font-weight: 600;
     font-size: 1rem;
     color: var(--text-color);
@@ -107,12 +107,12 @@ h2 {
 
 /* 控制項分組 */
 .control-group {
-    margin-bottom: 1.25rem;
+    margin-bottom: 1rem; /* 減少底部邊距 */
 }
 
 .control-group label {
     display: block;
-    margin-bottom: 0.75rem;
+    margin-bottom: 0.5rem; /* 減少底部邊距 */
     font-size: 0.875rem;
     font-weight: 500;
     color: var(--text-muted);
@@ -122,24 +122,24 @@ h2 {
 .instructions {
     font-size: 0.8rem;
     color: var(--text-muted);
-    margin-top: -1rem;
-    margin-bottom: 1.25rem;
+    margin-top: -0.75rem; /* 減少頂部邊距 */
+    margin-bottom: 1rem; /* 減少底部邊距 */
 }
 
 /* 膚色樣本容器 */
 .color-swatches {
     display: flex;
     flex-wrap: wrap;
-    gap: 10px;
-    margin-bottom: 1.5rem;
-    padding-bottom: 1.5rem;
+    gap: 8px; /* 減少樣本間距 */
+    margin-bottom: 1rem; /* 減少底部邊距 */
+    padding-bottom: 1rem; /* 減少底部內邊距 */
     border-bottom: 1px solid var(--border-color);
 }
 
 /* 膚色樣本圓點 */
 .swatch {
-    width: 28px;
-    height: 28px;
+    width: 24px; /* 縮小樣本尺寸 */
+    height: 24px; /* 縮小樣本尺寸 */
     border-radius: 50%; /* 圓形 */
     border: 2px solid #fff;
     box-shadow: 0 2px 5px var(--shadow-color);
@@ -153,9 +153,9 @@ h2 {
 .button-group {
     display: flex;
     flex-direction: column;
-    gap: 0.75rem;
-    margin-top: 1rem;
-    padding-top: 1rem;
+    gap: 0.5rem; /* 減少按鈕間距 */
+    margin-top: 0.75rem; /* 減少頂部邊距 */
+    padding-top: 0.75rem; /* 減少頂部內邊距 */
     border-top: 1px solid var(--border-color);
 }
 
@@ -165,12 +165,12 @@ button {
     align-items: center;
     justify-content: center;
     gap: 0.5rem;
-    padding: 0.8rem 1.25rem;
+    padding: 0.6rem 1.25rem; /* 減少垂直內邊距 */
     border: none;
-    border-radius: 8px;
+    border-radius: 6px; /* 圓角稍微變小 */
     color: white;
     cursor: pointer;
-    font-size: 0.9375rem;
+    font-size: 0.9rem; /* 字體稍微變小 */
     font-weight: 600;
     transition: all 0.2s ease;
 }
@@ -187,20 +187,20 @@ button:hover {
 #save-btn:hover { background-color: var(--success-hover); }
 .button-secondary {
     background-color: var(--warning-color);
-    margin-bottom: 1.5rem;
+    margin-bottom: 1rem; /* 減少底部邊距 */
 }
 .button-secondary:hover { background-color: var(--warning-hover); }
 
 /* 單選按鈕群組 */
 .radio-group div {
-    margin-bottom: 8px;
+    margin-bottom: 4px; /* 減少選項間距 */
 }
 
 .radio-group label {
     display: inline-block;
     font-size: 0.9rem;
     cursor: pointer;
-    padding: 0.5rem 0.75rem;
+    padding: 0.4rem 0.75rem; /* 減少內邊距 */
     border-radius: 6px;
     transition: all 0.2s;
     border: 2px solid transparent;
@@ -229,21 +229,21 @@ input[type="range"] {
     -webkit-appearance: none; /* 移除 WebKit 的預設樣式 */
     appearance: none;
     width: 100%;
-    height: 8px;
+    height: 6px; /* 軌道變細 */
     background: var(--slider-track);
-    border-radius: 4px;
+    border-radius: 3px;
     outline: none;
 }
 /* 自訂滑桿的圓鈕 (thumb) */
 input[type="range"]::-webkit-slider-thumb {
     -webkit-appearance: none;
     appearance: none;
-    width: 20px;
-    height: 20px;
+    width: 18px; /* 圓鈕變小 */
+    height: 18px; /* 圓鈕變小 */
     background: var(--slider-thumb);
     cursor: pointer;
     border-radius: 50%;
-    border: 3px solid var(--controls-bg);
+    border: 2px solid var(--controls-bg);
     transition: all 0.2s;
 }
 input[type="range"]::-webkit-slider-thumb:hover {
@@ -272,10 +272,10 @@ input[type="range"]::-webkit-slider-thumb:hover {
 /* 遮罩預覽視窗 */
 .preview-container {
     position: absolute;
-    top: 20px;
-    right: 20px;
-    width: 200px;
-    height: 150px;
+    top: 15px;
+    right: 15px;
+    width: 180px;
+    height: 135px;
     background-color: rgba(0, 0, 0, 0.5);
     border: 1px solid var(--border-color);
     border-radius: 8px;
@@ -335,7 +335,7 @@ input[type="range"]::-webkit-slider-thumb:hover {
     border: 1px solid var(--border-color);
     border-radius: 6px;
     padding: 0.75rem;
-    height: 120px;
+    height: 100px; /* 稍微變矮 */
     overflow-y: auto;
     font-family: 'SF Mono', 'Courier New', Courier, monospace; /* 等寬字體 */
     font-size: 0.8rem;
