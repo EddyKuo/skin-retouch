@@ -22,7 +22,8 @@
     ],
     "win": {
       "icon": "enhance.png",
-      "target": "portable"
+      "target": "portable",
+      "legalTrademarks": "Copyright © 2025 Eddy Kuo"
     }
   },
   "keywords": [
@@ -31,7 +32,7 @@
     "image-processing",
     "retouching"
   ],
-  "author": "",
+  "author": "Eddy Kuo",
   "license": "ISC",
   "devDependencies": {
     "electron": "^37.3.1",
