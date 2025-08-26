@@ -104,6 +104,7 @@ export const FINAL_FRAGMENT_SHADER_SOURCE = `
     uniform sampler2D u_blurredImage;  // 低頻層 (模糊後的圖片)
     uniform sampler2D u_skinMask;      // 膚色遮罩
     uniform float u_detailAmount;      // 細節保留量
+    uniform float u_maskExpansion;     // 遮罩擴張值 (0.0 to 0.5)
     uniform int u_viewMode;            // 視圖模式 (0: Final, 2: High, 3: Low)
 
     void main() {
@@ -113,7 +114,13 @@ export const FINAL_FRAGMENT_SHADER_SOURCE = `
         }
         vec4 original = texture2D(u_originalImage, v_texCoord);
         vec4 blurred = texture2D(u_blurredImage, v_texCoord);
+        
+        // 從紋理讀取模糊後的遮罩值 (0.0 to 1.0)
         float mask = texture2D(u_skinMask, v_texCoord).r;
+        
+        // 使用 smoothstep 根據擴張值重新對映遮罩，使其邊緣更可控
+        // 當 expansion 為 0 時，邊緣在 0.5 處截斷；當 expansion 為 0.5 時，遮罩幾乎完全變白
+        mask = smoothstep(0.5 - u_maskExpansion, 0.5 + u_maskExpansion, mask);
 
         // 高低頻分離：高頻 = 原始 - 低頻
         vec3 highPass = original.rgb - blurred.rgb;
@@ -130,7 +137,7 @@ export const FINAL_FRAGMENT_SHADER_SOURCE = `
 
         // 計算平滑後的皮膚顏色：低頻 + 高頻 * 細節量
         vec3 smoothedSkin = blurred.rgb + highPass * u_detailAmount;
-        // 使用遮罩混合原始顏色和平滑後的顏色
+        // 使用處理過的遮罩混合原始顏色和平滑後的顏色
         vec3 finalColor = mix(original.rgb, smoothedSkin, mask);
         gl_FragColor = vec4(finalColor, original.a);
     }

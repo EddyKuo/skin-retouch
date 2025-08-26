@@ -101,7 +101,7 @@ export class BatchProcessor {
 
     renderImageOffscreen(imageObject) {
         const gl = this.gl;
-        const { smoothness, detailAmount, colorTolerance, maskBlurRadius, selectedSkinTones } = this.appState;
+        const { smoothness, detailAmount, colorTolerance, maskBlurRadius, maskExpansion, selectedSkinTones } = this.appState;
 
         const createAndSetupTexture = (width, height) => {
             const texture = gl.createTexture();
@@ -213,6 +213,7 @@ export class BatchProcessor {
         gl.uniformMatrix4fv(gl.getUniformLocation(this.finalProgram, 'u_transform'), false, identityMatrix);
         gl.uniform1i(gl.getUniformLocation(this.finalProgram, 'u_viewMode'), 0);
         gl.uniform1f(gl.getUniformLocation(this.finalProgram, 'u_detailAmount'), detailAmount);
+        gl.uniform1f(gl.getUniformLocation(this.finalProgram, 'u_maskExpansion'), maskExpansion);
         gl.activeTexture(gl.TEXTURE0);
         gl.bindTexture(gl.TEXTURE_2D, tempOriginalTexture);
         gl.uniform1i(gl.getUniformLocation(this.finalProgram, 'u_originalImage'), 0);

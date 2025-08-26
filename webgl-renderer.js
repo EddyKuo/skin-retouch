@@ -70,7 +70,7 @@ export class WebGLRenderer {
 
     render(appState) {
         const gl = this.gl;
-        const { image, smoothness, detailAmount, colorTolerance, maskBlurRadius, selectedSkinTones, currentViewMode } = appState;
+        const { image, smoothness, detailAmount, colorTolerance, maskBlurRadius, maskExpansion, selectedSkinTones, currentViewMode } = appState;
         if (!image) return;
 
         const { transformMatrix } = this._getTransformMatrix(appState);
@@ -81,7 +81,15 @@ export class WebGLRenderer {
         // Pass 1: 生成硬邊遮罩 -> fbo[3]
         gl.bindFramebuffer(gl.FRAMEBUFFER, this.framebuffers.fbo[3]);
         gl.useProgram(this.programs.mask);
-        this._setUniforms(this.programs.mask, { u_transform: identityMatrix, u_originalImage: 0, u_toneCount: selectedSkinTones.length, u_tolerance: colorTolerance, u_skinTones: selectedSkinTones.flat() });
+        // --- BUG FIX: Manually set uniforms for the mask program to ensure the array is passed correctly ---
+        gl.uniformMatrix4fv(gl.getUniformLocation(this.programs.mask, 'u_transform'), false, identityMatrix);
+        gl.uniform1i(gl.getUniformLocation(this.programs.mask, 'u_originalImage'), 0);
+        gl.uniform1i(gl.getUniformLocation(this.programs.mask, 'u_toneCount'), selectedSkinTones.length);
+        gl.uniform1f(gl.getUniformLocation(this.programs.mask, 'u_tolerance'), colorTolerance);
+        if (selectedSkinTones.length > 0) {
+            gl.uniform3fv(gl.getUniformLocation(this.programs.mask, 'u_skinTones'), selectedSkinTones.flat());
+        }
+        // --- End of BUG FIX ---
         gl.activeTexture(gl.TEXTURE0);
         gl.bindTexture(gl.TEXTURE_2D, this.textures.original);
         this._draw(this.programs.mask);
@@ -100,7 +108,7 @@ export class WebGLRenderer {
         
         gl.useProgram(this.programs.final);
         const viewModeMap = { 'final': 0, 'high': 2, 'low': 3 };
-        this._setUniforms(this.programs.final, { u_transform: transformMatrix, u_viewMode: viewModeMap[currentViewMode], u_detailAmount: detailAmount, u_originalImage: 0, u_blurredImage: 1, u_skinMask: 2 });
+        this._setUniforms(this.programs.final, { u_transform: transformMatrix, u_viewMode: viewModeMap[currentViewMode], u_detailAmount: detailAmount, u_maskExpansion: maskExpansion, u_originalImage: 0, u_blurredImage: 1, u_skinMask: 2 });
         
         gl.activeTexture(gl.TEXTURE0);
         gl.bindTexture(gl.TEXTURE_2D, this.textures.original);

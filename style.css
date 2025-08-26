@@ -1,315 +1,337 @@
-/* :root 定義了全域 CSS 變數，方便統一管理顏色、字體等樣式 */
+/* :root 定義了全域 CSS 變數 */
 :root {
     /* 字體 */
     --font-sans: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
     
-    /* 主要顏色 */
-    --primary-bg: #1e1e1e;      /* 主背景色 (最底層) */
-    --secondary-bg: #2d2d2d;    /* 次要背景色 (畫布區) */
-    --controls-bg: #252526;     /* 控制項面板背景色 */
-    --text-color: #cccccc;      /* 主要文字顏色 */
-    --text-muted: #9e9e9e;      /* 輔助/提示文字顏色 */
-    --accent-color: #0e639c;     /* 強調色 (如按鈕) */
-    --accent-hover: #1177bb;    /* 強調色滑鼠懸停 */
-    --success-color: #2a9d8f;   /* 成功狀態顏色 (如儲存按鈕) */
-    --success-hover: #2ec4b6;   /* 成功狀態滑鼠懸停 */
-    --warning-color: #e76f51;   /* 警告/次要操作顏色 (如清除按鈕) */
-    --warning-hover: #f4a261;   /* 警告狀態滑鼠懸停 */
-    --border-color: #3e3e42;    /* 邊框顏色 */
-    --shadow-color: rgba(0, 0, 0, 0.3); /* 陰影顏色 */
-
-    /* 滑桿樣式 */
-    --slider-track: #4a4a4a;      /* 滑桿軌道顏色 */
-    --slider-progress: var(--accent-color); /* 滑桿進度顏色 (目前未使用) */
-    --slider-thumb: #d0d0d0;      /* 滑桿圓鈕顏色 */
-    --slider-thumb-hover: #ffffff;/* 滑桿圓鈕滑鼠懸停 */
+    /* 顏色 */
+    --primary-bg: #1a1d24;
+    --secondary-bg: #2c303a;
+    --controls-bg: #22252e;
+    --text-color: #e0e0e0;
+    --text-muted: #a0a0a0;
+    --accent-color: #00aaff;
+    --accent-hover: #33bbff;
+    --success-color: #28a745;
+    --success-hover: #2dbc4e;
+    --warning-color: #dc3545;
+    --warning-hover: #e45a66;
+    --border-color: #3a3f4b;
+    --shadow-color: rgba(0, 0, 0, 0.5);
+    --slider-track: #4a4f5a;
+    --slider-thumb: #e0e0e0;
+    --slider-thumb-hover: #ffffff;
 }
 
-/* 全局 body 樣式 */
+/* 全局樣式 */
 body {
     font-family: var(--font-sans);
     display: flex;
-    justify-content: center;
-    align-items: center;
-    height: 100vh; /* 佔滿整個視窗高度 */
+    height: 100vh;
     margin: 0;
     background-color: var(--primary-bg);
     color: var(--text-color);
-    overflow: hidden; /* 防止出現滾動條 */
+    overflow: hidden;
 }
 
-/* 主容器，包含畫布和控制項 */
+/* 主容器 */
 .main-container {
     display: flex;
     width: 100vw;
     height: 100vh;
-    background-color: var(--secondary-bg);
 }
 
 /* 畫布容器 */
 .canvas-container {
-    flex-grow: 1; /* 佔據剩餘的所有空間 */
+    flex-grow: 1;
     display: flex;
     justify-content: center;
     align-items: center;
-    padding: 0;
-    overflow: hidden;
-    position: relative; /* 為子元素的絕對定位提供基準 */
-    /* 使用 CSS 漸層創建透明背景的棋盤格圖案 */
-    background-image: linear-gradient(45deg, #2a2a2a 25%, transparent 25%), 
-                      linear-gradient(-45deg, #2a2a2a 25%, transparent 25%),
-                      linear-gradient(45deg, transparent 75%, #2a2a2a 75%),
-                      linear-gradient(-45deg, transparent 75%, #2a2a2a 75%);
-    background-size: 20px 20px;
-    background-position: 0 0, 0 10px, 10px -10px, -10px 0px;
+    position: relative;
+    background-image: 
+        linear-gradient(45deg, #22252e 25%, transparent 25%), 
+        linear-gradient(-45deg, #22252e 25%, transparent 25%),
+        linear-gradient(45deg, transparent 75%, #22252e 75%),
+        linear-gradient(-45deg, transparent 75%, #22252e 75%);
+    background-size: 24px 24px;
+    background-position: 0 0, 0 12px, 12px -12px, -12px 0px;
 }
 
-/* WebGL 畫布 */
 #gl-canvas {
     max-width: none;
     max-height: none;
-    border-radius: 0;
-    border: none;
-    box-shadow: 0 15px 40px var(--shadow-color);
-    cursor: grab; /* 預設滑鼠手勢為 "可抓取" */
+    box-shadow: 0 25px 50px -12px var(--shadow-color);
+    cursor: grab;
 }
 
 #gl-canvas:active {
-    cursor: grabbing; /* 按下時的滑鼠手勢為 "抓取中" */
+    cursor: grabbing;
 }
 
 /* 右側控制項容器 */
 .controls-container {
-    width: 300px; /* 稍微變窄 */
-    flex-shrink: 0; /* 防止容器被壓縮 */
+    width: 320px;
+    flex-shrink: 0;
     background-color: var(--controls-bg);
-    padding: 1rem; /* 減少內邊距 */
+    background-image: url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fill-rule='evenodd'%3E%3Cg fill='%233a3f4b' fill-opacity='0.1'%3E%3Cpath d='M36 34v-4h-2v4h-4v2h4v4h2v-4h4v-2h-4zm0-30V0h-2v4h-4v2h4v4h2V6h4V4h-4zM6 34v-4H4v4H0v2h4v4h2v-4h4v-2H6zM6 4V0H4v4H0v2h4v4h2V6h4V4H6z'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E");
+    padding: 1.5rem;
     box-sizing: border-box;
     display: flex;
-    flex-direction: column; /* 垂直佈局 */
+    flex-direction: column;
     border-left: 1px solid var(--border-color);
-    overflow-y: auto; /* 當內容超出時顯示垂直滾動條 */
+    overflow-y: auto;
 }
 
-/* 標題樣式 */
+.section {
+    margin-bottom: 1.5rem;
+    padding-bottom: 1.5rem;
+    border-bottom: 1px solid var(--border-color);
+}
+.section:last-child {
+    border-bottom: none;
+    padding-bottom: 0;
+}
+
 h2 {
     display: flex;
     align-items: center;
-    gap: 0.5rem;
-    margin-top: 0;
-    margin-bottom: 0.75rem; /* 減少底部邊距 */
-    border-bottom: 1px solid var(--border-color);
-    padding-bottom: 0.5rem; /* 減少底部內邊距 */
+    gap: 0.75rem;
+    margin: 0 0 1.25rem 0;
     font-weight: 600;
-    font-size: 1rem;
+    font-size: 1.1rem;
     color: var(--text-color);
 }
 
-/* 控制項分組 */
+h2 svg {
+    color: var(--accent-color);
+}
+
 .control-group {
-    margin-bottom: 1rem; /* 減少底部邊距 */
+    margin-bottom: 1rem;
 }
 
 .control-group label {
     display: block;
-    margin-bottom: 0.5rem; /* 減少底部邊距 */
+    margin-bottom: 0.5rem;
     font-size: 0.875rem;
     font-weight: 500;
     color: var(--text-muted);
 }
 
-/* 操作說明文字 */
 .instructions {
     font-size: 0.8rem;
     color: var(--text-muted);
-    margin-top: -0.75rem; /* 減少頂部邊距 */
-    margin-bottom: 1rem; /* 減少底部邊距 */
+    margin: -1rem 0 1rem 0;
+    line-height: 1.5;
 }
 
-/* 膚色樣本容器 */
+/* 膚色樣本 */
 .color-swatches {
     display: flex;
     flex-wrap: wrap;
-    gap: 8px; /* 減少樣本間距 */
-    margin-bottom: 1rem; /* 減少底部邊距 */
-    padding-bottom: 1rem; /* 減少底部內邊距 */
-    border-bottom: 1px solid var(--border-color);
+    gap: 10px;
+    margin-bottom: 1rem;
 }
 
-/* 膚色樣本圓點 */
 .swatch {
-    width: 24px; /* 縮小樣本尺寸 */
-    height: 24px; /* 縮小樣本尺寸 */
-    border-radius: 50%; /* 圓形 */
-    border: 2px solid #fff;
-    box-shadow: 0 2px 5px var(--shadow-color);
-    transition: transform 0.2s;
+    width: 28px;
+    height: 28px;
+    border-radius: 50%;
+    border: 2px solid rgba(255, 255, 255, 0.8);
+    box-shadow: 0 2px 8px rgba(0,0,0,0.3);
+    transition: transform 0.2s ease;
 }
 .swatch:hover {
-    transform: scale(1.1); /* 滑鼠懸停時放大 */
+    transform: scale(1.15);
 }
 
-/* 按鈕群組 */
+/* 按鈕 */
 .button-group {
-    display: flex;
-    flex-direction: column;
-    gap: 0.5rem; /* 減少按鈕間距 */
-    margin-top: 0.75rem; /* 減少頂部邊距 */
-    padding-top: 0.75rem; /* 減少頂部內邊距 */
-    border-top: 1px solid var(--border-color);
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 0.75rem;
 }
 
-/* 通用按鈕樣式 */
+.button-group #batch-btn {
+    grid-column: 1 / -1; /* 佔滿整行 */
+}
+
 button {
     display: flex;
     align-items: center;
     justify-content: center;
-    gap: 0.5rem;
-    padding: 0.6rem 1.25rem; /* 減少垂直內邊距 */
-    border: none;
-    border-radius: 6px; /* 圓角稍微變小 */
-    color: white;
+    gap: 0.6rem;
+    padding: 0.75rem 1rem;
+    border: 1px solid var(--border-color);
+    border-radius: 8px;
+    color: var(--text-color);
+    background: linear-gradient(145deg, #2e323c, #262932);
     cursor: pointer;
-    font-size: 0.9rem; /* 字體稍微變小 */
+    font-size: 0.9rem;
     font-weight: 600;
     transition: all 0.2s ease;
+    box-shadow: 0 2px 5px rgba(0,0,0,0.2), inset 0 1px 1px rgba(255,255,255,0.05);
 }
 
 button:hover {
-    transform: translateY(-2px); /* 滑鼠懸停時輕微上移 */
-    box-shadow: 0 4px 10px rgba(0,0,0,0.2);
+    transform: translateY(-2px);
+    box-shadow: 0 4px 10px rgba(0,0,0,0.3), inset 0 1px 1px rgba(255,255,255,0.05);
+    border-color: var(--accent-color);
+    color: var(--accent-color);
 }
 
-/* 特定按鈕顏色 */
-#load-btn { background-color: var(--accent-color); }
-#load-btn:hover { background-color: var(--accent-hover); }
-#save-btn { background-color: var(--success-color); }
-#save-btn:hover { background-color: var(--success-hover); }
+button svg {
+    transition: color 0.2s ease;
+}
+button:hover svg {
+    color: var(--accent-color);
+}
+
+#load-btn {
+    color: var(--accent-color);
+    border-color: var(--accent-color);
+}
+#load-btn:hover {
+    background: var(--accent-color);
+    color: white;
+}
+#load-btn:hover svg { color: white; }
+
+#save-btn {
+    color: var(--success-color);
+    border-color: var(--success-color);
+}
+#save-btn:hover {
+    background: var(--success-color);
+    color: white;
+}
+#save-btn:hover svg { color: white; }
+
 .button-secondary {
-    background-color: var(--warning-color);
-    margin-bottom: 1rem; /* 減少底部邊距 */
+    background: transparent;
+    border-color: var(--warning-color);
+    color: var(--warning-color);
+    width: 100%;
+    margin-bottom: 1rem;
 }
-.button-secondary:hover { background-color: var(--warning-hover); }
-
-/* 單選按鈕群組 */
-.radio-group div {
-    margin-bottom: 4px; /* 減少選項間距 */
+.button-secondary:hover {
+    background: var(--warning-color);
+    color: white;
 }
+.button-secondary:hover svg { color: white; }
 
+/* 單選按鈕 */
 .radio-group label {
-    display: inline-block;
+    display: block;
     font-size: 0.9rem;
     cursor: pointer;
-    padding: 0.4rem 0.75rem; /* 減少內邊距 */
+    padding: 0.6rem 1rem;
     border-radius: 6px;
     transition: all 0.2s;
-    border: 2px solid transparent;
-    width: 100%;
-    box-sizing: border-box;
+    border: 1px solid var(--border-color);
+    margin-bottom: 0.5rem;
+    background: #262932;
 }
 
 .radio-group label:hover {
-    background-color: rgba(255,255,255,0.05);
+    background-color: #3a3f4b;
+    border-color: var(--accent-color);
 }
 
-/* 隱藏原始的 radio input */
 .radio-group input[type="radio"] { 
     display: none; 
 }
 
-/* 當 radio 被選中時，其後面的 label 的樣式 */
 .radio-group input[type="radio"]:checked + label {
     color: white;
     border-color: var(--accent-color);
-    background-color: rgba(0, 123, 255, 0.1);
+    background-color: rgba(0, 170, 255, 0.1);
+    box-shadow: 0 0 10px rgba(0, 170, 255, 0.2);
 }
 
-/* 自訂範圍滑桿樣式 */
+/* 滑桿 */
 input[type="range"] {
-    -webkit-appearance: none; /* 移除 WebKit 的預設樣式 */
+    -webkit-appearance: none;
     appearance: none;
     width: 100%;
-    height: 6px; /* 軌道變細 */
+    height: 6px;
     background: var(--slider-track);
     border-radius: 3px;
     outline: none;
+    transition: background 0.2s;
 }
-/* 自訂滑桿的圓鈕 (thumb) */
 input[type="range"]::-webkit-slider-thumb {
     -webkit-appearance: none;
     appearance: none;
-    width: 18px; /* 圓鈕變小 */
-    height: 18px; /* 圓鈕變小 */
+    width: 20px;
+    height: 20px;
     background: var(--slider-thumb);
     cursor: pointer;
     border-radius: 50%;
-    border: 2px solid var(--controls-bg);
+    border: 3px solid var(--controls-bg);
     transition: all 0.2s;
+    box-shadow: 0 0 5px rgba(0,0,0,0.5);
 }
 input[type="range"]::-webkit-slider-thumb:hover {
     background: var(--slider-thumb-hover);
     transform: scale(1.1);
+    box-shadow: 0 0 10px rgba(0, 170, 255, 0.5);
 }
 
-/* 響應式設計：當視窗寬度小於 1000px 時 */
-@media (max-width: 1000px) {
-    .main-container {
-        flex-direction: column; /* 改為垂直佈局 */
-    }
-    .controls-container {
-        width: 100%;
-        height: auto;
-        max-height: 50vh; /* 控制項面板最大高度為視窗的一半 */
-        border-left: none;
-        border-top: 1px solid var(--border-color);
-    }
-    .canvas-container {
-        height: auto;
-        flex-grow: 1;
-    }
-}
-
-/* 遮罩預覽視窗 */
+/* 預覽視窗 */
 .preview-container {
     position: absolute;
-    top: 15px;
-    right: 15px;
-    width: 180px;
-    height: 135px;
-    background-color: rgba(0, 0, 0, 0.5);
+    bottom: 20px;
+    right: 20px;
+    width: 200px;
+    height: 150px;
+    background-color: rgba(34, 37, 46, 0.8);
     border: 1px solid var(--border-color);
     border-radius: 8px;
     overflow: hidden;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: center;
-    backdrop-filter: blur(5px); /* 毛玻璃效果 */
-    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.4);
-    z-index: 10; /* 確保在最上層 */
+    backdrop-filter: blur(8px);
+    box-shadow: 0 8px 20px rgba(0, 0, 0, 0.4);
+    z-index: 10;
+    transition: transform 0.3s ease; /* 移除 all，避免影響 left/top */
+}
+.preview-container:hover {
+    transform: scale(1.05);
 }
 
 #mask-preview-canvas {
     width: 100%;
-    height: calc(100% - 25px);
-    object-fit: contain; /* 保持長寬比 */
+    height: calc(100% - 28px);
+    object-fit: contain;
 }
 
 .preview-container p {
     margin: 0;
-    padding: 4px 0;
-    font-size: 0.75rem;
+    padding: 5px 0;
+    font-size: 0.8rem;
     color: var(--text-muted);
     width: 100%;
     text-align: center;
-    background-color: rgba(0, 0, 0, 0.7);
-    height: 25px;
+    background-color: rgba(0, 0, 0, 0.3);
+    height: 28px;
     box-sizing: border-box;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
+    cursor: move; /* 新增拖曳手勢 */
+    user-select: none; /* 防止拖曳時選取文字 */
 }
 
-/* 批次處理面板樣式 */
-.batch-progress {
-    margin-top: 0.5rem;
+/* 批次處理 */
+.main-actions-container {
+    margin-top: auto; /* 將此容器推到底部 */
+    padding-top: 1.5rem;
+    border-top: 1px solid var(--border-color);
+}
+
+.batch-section {
+    margin-bottom: 1rem;
+    padding-bottom: 0;
+    border-bottom: none;
 }
 
 .progress-bar-container {
@@ -326,28 +348,35 @@ input[type="range"]::-webkit-slider-thumb:hover {
     height: 100%;
     background-color: var(--success-color);
     border-radius: 4px;
-    transition: width 0.2s ease-in-out; /* 進度條寬度變化動畫 */
+    transition: width 0.2s ease-in-out;
 }
 
-/* 日誌區域 */
 .log-area {
     background-color: var(--primary-bg);
     border: 1px solid var(--border-color);
     border-radius: 6px;
     padding: 0.75rem;
-    height: 100px; /* 稍微變矮 */
+    height: 100px;
     overflow-y: auto;
-    font-family: 'SF Mono', 'Courier New', Courier, monospace; /* 等寬字體 */
+    font-family: 'SF Mono', 'Courier New', Courier, monospace;
     font-size: 0.8rem;
     color: var(--text-muted);
-    white-space: pre-wrap; /* 自動換行 */
+    white-space: pre-wrap;
     word-wrap: break-word;
 }
 
-/* 批次處理按鈕 */
-#batch-btn { 
-    background-color: #6c757d; 
+/* 滾動條樣式 */
+.controls-container::-webkit-scrollbar {
+    width: 8px;
 }
-#batch-btn:hover { 
-    background-color: #5a6268; 
+.controls-container::-webkit-scrollbar-track {
+    background: var(--controls-bg);
+}
+.controls-container::-webkit-scrollbar-thumb {
+    background-color: var(--slider-track);
+    border-radius: 4px;
+    border: 2px solid var(--controls-bg);
+}
+.controls-container::-webkit-scrollbar-thumb:hover {
+    background-color: #5a5f6a;
 }

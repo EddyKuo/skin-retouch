@@ -2,6 +2,7 @@ import { WebGLRenderer } from './webgl-renderer.js';
 import { setupUIHandlers } from './ui-handlers.js';
 import { setupViewportControls } from './viewport-controls.js';
 import { BatchProcessor } from './batch-processor.js';
+import { initDraggable } from './draggable.js';
 
 /**
  * renderer.js
@@ -21,12 +22,15 @@ document.addEventListener('DOMContentLoaded', () => {
         detailValueSpan: document.getElementById('detail-value'),
         toleranceSlider: document.getElementById('tolerance-slider'),
         toleranceValueSpan: document.getElementById('tolerance-value'),
+        expansionSlider: document.getElementById('expansion-slider'),
+        expansionValueSpan: document.getElementById('expansion-value'),
         colorSwatchesContainer: document.getElementById('color-swatches'),
         clearColorsBtn: document.getElementById('clear-colors-btn'),
         viewModeGroup: document.getElementById('view-mode-group'),
         loadBtn: document.getElementById('load-btn'),
         saveBtn: document.getElementById('save-btn'),
         fileInput: document.getElementById('file-input'),
+        previewContainer: document.querySelector('.preview-container'),
         maskPreviewCanvas: document.getElementById('mask-preview-canvas'),
         maskPreviewCtx: document.getElementById('mask-preview-canvas').getContext('2d'),
     };
@@ -42,6 +46,7 @@ document.addEventListener('DOMContentLoaded', () => {
         smoothness: 0.1 + (parseFloat(dom.radiusSlider.value) / 100) * 15,
         detailAmount: parseFloat(dom.detailSlider.value) / 100.0,
         colorTolerance: parseFloat(dom.toleranceSlider.value) / 100.0,
+        maskExpansion: parseFloat(dom.expansionSlider.value) / 200.0, // 轉換為 0.0 - 0.5
         maskBlurRadius: 5.0, // 固定的遮罩模糊半徑
         selectedSkinTones: [],
         currentViewMode: 'final',
@@ -59,8 +64,10 @@ document.addEventListener('DOMContentLoaded', () => {
     setupUIHandlers(appState, renderer, batchProcessor);
 
     // 6. 設置視口控制 (縮放/平移)
-    // 傳入一個回呼函式，以便在視口變化時觸發重新渲染
     setupViewportControls(appState, () => renderer.render(appState));
+
+    // 7. 啟用預覽視窗的拖曳功能
+    initDraggable(dom.previewContainer, dom.previewContainer.querySelector('p'));
     
     console.log("應用程式初始化完成。");
 });

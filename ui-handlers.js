@@ -36,7 +36,7 @@ function handleFileSelect(event, appState, renderer) {
 }
 
 function handleSliderChange(event, appState, renderer) {
-    const { radiusSlider, detailSlider, toleranceSlider, radiusValueSpan, detailValueSpan, toleranceValueSpan } = appState.dom;
+    const { radiusSlider, detailSlider, toleranceSlider, expansionSlider, radiusValueSpan, detailValueSpan, toleranceValueSpan, expansionValueSpan } = appState.dom;
     
     if (event.target === radiusSlider) {
         const sliderValue = parseFloat(event.target.value);
@@ -48,11 +48,15 @@ function handleSliderChange(event, appState, renderer) {
     } else if (event.target === toleranceSlider) {
         appState.colorTolerance = parseFloat(event.target.value) / 100.0;
         toleranceValueSpan.textContent = event.target.value;
+    } else if (event.target === expansionSlider) {
+        appState.maskExpansion = parseFloat(event.target.value) / 200.0; // 轉換為 0.0 - 0.5
+        expansionValueSpan.textContent = event.target.value;
     }
     
     if (appState.image) {
         renderer.render(appState);
-        if (event.target === toleranceSlider) {
+        // 容差或擴張值變化時，都需要更新遮罩預覽
+        if (event.target === toleranceSlider || event.target === expansionSlider) {
             renderer.renderMaskPreview(appState);
         }
     }
@@ -122,7 +126,7 @@ function updateColorSwatches(appState) {
 }
 
 export function setupUIHandlers(appState, renderer, batchProcessor) {
-    const { loadBtn, fileInput, radiusSlider, detailSlider, toleranceSlider, clearColorsBtn, saveBtn, viewModeGroup, canvas } = appState.dom;
+    const { loadBtn, fileInput, radiusSlider, detailSlider, toleranceSlider, expansionSlider, clearColorsBtn, saveBtn, viewModeGroup, canvas } = appState.dom;
 
     loadBtn.addEventListener('click', () => fileInput.click());
     fileInput.addEventListener('change', (e) => handleFileSelect(e, appState, renderer));
@@ -130,6 +134,7 @@ export function setupUIHandlers(appState, renderer, batchProcessor) {
     radiusSlider.addEventListener('input', (e) => handleSliderChange(e, appState, renderer));
     detailSlider.addEventListener('input', (e) => handleSliderChange(e, appState, renderer));
     toleranceSlider.addEventListener('input', (e) => handleSliderChange(e, appState, renderer));
+    expansionSlider.addEventListener('input', (e) => handleSliderChange(e, appState, renderer));
     
     clearColorsBtn.addEventListener('click', () => handleClearColors(appState, renderer));
     saveBtn.addEventListener('click', () => handleSave(appState, batchProcessor));
