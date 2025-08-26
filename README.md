@@ -1,71 +1,86 @@
-# Skin Retoucher Pro
+# Skin Retoucher Pro - 專業膚質修飾工具
 
-![Project Banner](./Skin%20Retoucher.png) <!-- 您可以替換成自己的專案橫幅圖片 -->
+![專案橫幅](./Skin%20Retoucher.png)
 
-A professional-grade desktop application for skin retouching, built with Electron and WebGL. This tool leverages the power of GPU acceleration to provide a real-time, non-destructive workflow based on the industry-standard **Frequency Separation** technique.
+一款專業級的桌面端膚質修飾應用程式，使用 Electron 和 WebGL 技術建構。本工具利用 GPU 加速，提供基於業界標準**高低頻分離 (Frequency Separation)** 技術的即時、非破壞性工作流程。
 
-## Features
+## ✨ 功能特性
 
-- **Frequency Separation**: Intelligently separates skin texture (high frequency) from color and tone (low frequency) for natural-looking results.
-- **Selective Skin Masking**: Uses the HSV color space to create precise skin masks. Simply right-click on the image to select up to 10 skin tone samples.
-- **Real-time GPU Processing**: All image processing is done on the GPU using WebGL, allowing for instant feedback as you adjust parameters.
-- **Adjustable Parameters**:
-    - **Smoothness**: Controls the intensity of the low-frequency blur to smooth out skin tones.
-    - **Detail Amount**: Blends the original texture back in to retain a natural skin look.
-    - **Color Tolerance**: Adjusts the sensitivity of the skin tone selection.
-- **Interactive Viewport**:
-    - **Pan**: Hold the left mouse button and drag to move around the image.
-    - **Zoom**: Use the mouse wheel to zoom in and out, centered on your cursor.
-- **Debug Views**: Isolate and view specific layers (Skin Mask, High Frequency, Low Frequency) to fine-tune your results.
-- **Cross-Platform**: Built with Electron, it can be packaged for Windows, macOS, and Linux.
+- **高低頻分離**: 智慧地將皮膚紋理（高頻）與顏色色調（低頻）分離，以獲得自然、高品質的修飾效果。
+- **精準膚色遮罩**: 使用 HSV 色彩空間建立精確的皮膚遮罩。只需在圖片上**按右鍵**即可選取多達 10 個膚色樣本。
+- **即時 GPU 處理**: 所有影像處理都在 GPU 上使用 WebGL 完成，讓您在調整參數時能獲得即時反饋。
+- **可調參數**:
+    - **平滑度**: 控制低頻模糊的強度，以平滑膚色。
+    - **細節保留**: 將原始紋理混合回來，以保持自然的皮膚外觀。
+    - **顏色容差**: 調整膚色選擇的靈敏度。
+    - **遮罩擴張**: 在容差基礎上，進一步擴大或縮小遮罩範圍，實現更精細的控制。
+- **互動式視窗**:
+    - **平移**: 按住滑鼠左鍵並拖曳以在圖片上移動。
+    - **縮放**: 使用滑鼠滾輪以游標為中心進行縮放。
+    - **可拖曳的預覽窗**: 按住預覽視窗的標題列可以將其拖曳到任意位置。
+- **除錯視圖**: 可單獨查看特定圖層（高頻、低頻），以微調您的結果。
+- **跨平台**: 使用 Electron 建構，可打包成適用於 Windows, macOS 和 Linux 的應用程式。
 
-## Tech Stack
+## 🛠️ 技術棧
 
-- **Application Framework**: [Electron](https://www.electronjs.org/)
-- **Real-time Rendering**: [WebGL](https://get.webgl.org/)
-- **GPU Shading Language**: GLSL
-- **Core Environment**: [Node.js](https://nodejs.org/)
-- **UI**: HTML5 / CSS3 / JavaScript (ES Modules)
+- **應用程式框架**: [Electron](https://www.electronjs.org/)
+- **即時渲染**: [WebGL](https://get.webgl.org/)
+- **GPU 著色器語言**: GLSL
+- **核心環境**: [Node.js](https://nodejs.org/)
+- **使用者介面**: HTML5 / CSS3 / JavaScript
 
-## Getting Started
+## 🚀 如何使用
 
-Follow these instructions to get a local copy up and running.
+1.  **載入圖片**: 點擊「📂 載入圖片」按鈕來開啟一張照片。
+2.  **選取膚色**: 在圖片的皮膚區域**按下滑鼠右鍵**，可以選取不同的膚色。您最多可以添加 10 個樣本，應用程式會自動將它們混合計算。
+3.  **調整容差與擴張**:
+    - 使用「💧 顏色容差」滑桿來擴大或縮小基礎的顏色選取範圍。
+    - 使用「➕ 遮罩擴張」滑桿來平滑地擴展或收縮遮罩的邊緣，以完美覆蓋皮膚區域。
+    - 您可以隨時查看右上角的「遮罩預覽」視窗來觀察遮罩的變化。
+4.  **調整平滑度**: 增加「✨ 平滑度」滑桿的值，可以讓膚色和光影過渡得更均勻。
+5.  **保留細節**: 調整「🔍 細節保留」滑桿來帶回自然的皮膚紋理。通常建議使用 50-80% 之間的值。
+6.  **平移與縮放**: 使用滑鼠左鍵拖曳、使用滾輪縮放，以便進行更精細的操作。
+7.  **儲存圖片**: 當您對結果滿意時，點擊「💾 儲存圖片」按鈕來儲存您的作品。
 
-### Prerequisites
+## 👨‍💻 開發與建置
 
-- [Node.js](https://nodejs.org/) (which includes npm) installed on your system.
+本專案使用 Node.js 和 npm 進行管理。
 
-### Installation
+### 環境準備
 
-1.  **Clone the repository:**
+- 請確保您的系統上已安裝 [Node.js](https://nodejs.org/) (內含 npm)。
+
+### 安裝依賴
+
+1.  **複製專案倉庫:**
     ```sh
     git clone https://github.com/your-username/skin-retoucher-pro.git
     cd skin-retoucher-pro
     ```
 
-2.  **Install dependencies:**
+2.  **安裝依賴套件:**
     ```sh
     npm install
     ```
 
-### Running the Application
+### 本地開發
 
-To start the application in development mode, run:
+若要在開發模式下啟動應用程式，請執行：
 
 ```sh
 npm start
 ```
+此指令會啟動 Electron 應用程式，並自動開啟開發者工具。
 
-## How to Use
+### 生產建置
 
-1.  **Load Image**: Click the "Load Image" button to open a picture.
-2.  **Select Skin Tones**: **Right-click** on different areas of the skin in the image. You can add up to 10 samples.
-3.  **Adjust Tolerance**: Use the "Color Tolerance" slider to expand or shrink the masked area. Use the "Skin Mask" debug view to see the result.
-4.  **Adjust Smoothness**: Increase the "Smoothness" slider to even out skin color and tone.
-5.  **Retain Details**: Adjust the "Detail Amount" slider to bring back natural skin texture. A value between 50-80% is usually recommended.
-6.  **Pan & Zoom**: Use the left mouse button to drag and the mouse wheel to zoom for detailed work.
-7.  **Save Image**: Once you are satisfied, click the "Save Image" button to save your work.
+若要將應用程式打包成一個獨立的可執行檔（例如 Windows 的 `.exe`），請執行：
+
+```sh
+npm run build
+```
+建置完成後，您可以在 `dist` 資料夾中找到打包好的檔案。
 
 ---
 
-*This project was developed with guidance from the Gemini AI model.*
+*本專案在開發過程中得到了 Gemini AI 模型的指導與協助。*

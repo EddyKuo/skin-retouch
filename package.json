@@ -11,6 +11,9 @@
   "build": {
     "appId": "com.electron.skinretoucher",
     "productName": "Skin Retoucher Pro",
+    "asar": true,
+    "asarUnpack": null,
+    "compression": "maximum",
     "files": [
       "main.js",
       "preload.js",
@@ -18,12 +21,19 @@
       "webgl-utils.js",
       "index.html",
       "style.css",
-      "node_modules/**/*"
+      "enhance.png",
+      "Skin Retoucher.png"
     ],
     "win": {
       "icon": "enhance.png",
-      "target": "portable",
-      "legalTrademarks": "Copyright © 2025 Eddy Kuo"
+      "target": [
+        {
+          "target": "portable",
+          "arch": [
+            "x64"
+          ]
+        }
+      ]
     }
   },
   "keywords": [
@@ -37,6 +47,5 @@
   "devDependencies": {
     "electron": "^37.3.1",
     "electron-builder": "^26.0.12"
-  },
-  "dependencies": {}
+  }
 }
