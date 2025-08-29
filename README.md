@@ -1,4 +1,4 @@
-# Skin Retoucher Pro - 專業膚質修飾工具
+# Skin Retouch - 專業膚質修飾工具
 
 ![專案橫幅](./Skin%20Retoucher.png)
 
@@ -55,8 +55,8 @@
 
 1.  **複製專案倉庫:**
     ```sh
-    git clone https://github.com/your-username/skin-retoucher-pro.git
-    cd skin-retoucher-pro
+    git clone https://github.com/your-username/skin-retouch.git
+    cd skin-retouch
     ```
 
 2.  **安裝依賴套件:**
