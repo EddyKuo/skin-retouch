@@ -1,4 +1,4 @@
-# Skin Retoucher Pro - 專業膚質修飾工具
+# Skin Retouch - 專業膚質修飾工具
 
 ![專案橫幅](./Skin%20Retoucher.png)
 
