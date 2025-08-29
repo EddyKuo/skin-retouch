@@ -55,8 +55,8 @@
 
 1.  **複製專案倉庫:**
     ```sh
-    git clone https://github.com/your-username/skin-retoucher-pro.git
-    cd skin-retoucher-pro
+    git clone https://github.com/EddyKuo/skin-retouch.git
+    cd skin-retouch
     ```
 
 2.  **安裝依賴套件:**
@@ -85,3 +85,11 @@ npm run build
 ---
 
 *本專案在開發過程中得到了 Gemini AI 模型的指導與協助。*
+
+嗨，我是 [Eddy]！如果您喜歡我的專案，歡迎支持我，讓我能持續開發下去。
+
+💖 **支持專案發展**
+- ⭐ [GitHub Star](https://github.com/EddyKuo/skin-retouch) - 給我們一顆星星
+- 💰 [PayPal 捐贈](https://www.paypal.com/ncp/payment/9RMF2QUGNEZ24) - 贊助開發
+
+---
