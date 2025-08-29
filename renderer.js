@@ -23,8 +23,6 @@ document.addEventListener('DOMContentLoaded', () => {
     const saveBtn = document.getElementById('save-btn');
     const fileInput = document.getElementById('file-input');
     const previewContainer = document.querySelector('.preview-container');
-    const maskPreviewCanvas = document.getElementById('mask-preview-canvas');
-    const maskPreviewCtx = maskPreviewCanvas.getContext('2d');
 
     // --- WebGL 與狀態變數初始化 ---
     const gl = canvas.getContext('webgl', { preserveDrawingBuffer: true });
@@ -46,7 +44,7 @@ document.addEventListener('DOMContentLoaded', () => {
     let lastMouseY = 0;
 
     // --- WebGL 資源變數 ---
-    let originalTexture, blurProgram, maskProgram, finalProgram;
+    let originalTexture, blurProgram, maskProgram, finalProgram, previewProgram;
     let positionBuffer, texCoordBuffer;
     let textures = [], framebuffers = [];
 
@@ -132,6 +130,15 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     `;
 
+    const previewFragmentShaderSource = `
+        precision highp float;
+        varying vec2 v_texCoord;
+        uniform sampler2D u_texture;
+        void main() {
+            gl_FragColor = texture2D(u_texture, v_texCoord);
+        }
+    `;
+
     const finalFragmentShaderSource = `
         precision highp float;
         varying vec2 v_texCoord;
@@ -188,6 +195,54 @@ document.addEventListener('DOMContentLoaded', () => {
     canvas.addEventListener('mouseleave', handleMouseUp);
     canvas.addEventListener('contextmenu', handleContextMenu);
 
+    // --- Throttle 輔助函式 ---
+    function throttle(func, limit) {
+        let inThrottle;
+        let lastFunc;
+        let lastRan;
+        return function() {
+            const context = this;
+            const args = arguments;
+            if (!inThrottle) {
+                func.apply(context, args);
+                lastRan = Date.now();
+                inThrottle = true;
+            } else {
+                clearTimeout(lastFunc);
+                lastFunc = setTimeout(function() {
+                    if ((Date.now() - lastRan) >= limit) {
+                        func.apply(context, args);
+                        lastRan = Date.now();
+                    }
+                }, limit - (Date.now() - lastRan));
+            }
+        }
+    }
+
+    // --- 監聽視窗大小變化 (使用 Throttle) ---
+    const handleResize = throttle(() => {
+        if (!image) return;
+        
+        // 讀取由 CSS 決定的畫布顯示尺寸
+        const displayWidth = canvas.clientWidth;
+        const displayHeight = canvas.clientHeight;
+
+        // 檢查繪圖緩衝區的尺寸是否與顯示尺寸不同
+        if (canvas.width !== displayWidth || canvas.height !== displayHeight) {
+            // 如果不同，則同步它們
+            canvas.width = displayWidth;
+            canvas.height = displayHeight;
+            
+            // 通知 WebGL 視口已更新
+            gl.viewport(0, 0, canvas.width, canvas.height);
+            
+            // 重新渲染
+            render();
+        }
+    }, 100); // 每 100ms 最多執行一次
+
+    window.addEventListener('resize', handleResize);
+
     // --- 主要功能函式 ---
     function handleFileSelect(event) {
         const file = event.target.files[0];
@@ -207,7 +262,6 @@ document.addEventListener('DOMContentLoaded', () => {
                 gl.viewport(0, 0, canvas.width, canvas.height);
                 setupWebGL();
                 render();
-                renderMaskPreview();
             };
             img.src = e.target.result;
         };
@@ -231,9 +285,6 @@ document.addEventListener('DOMContentLoaded', () => {
         }
         if (image) {
             render();
-            if (event.target === toleranceSlider || event.target === expansionSlider) {
-                renderMaskPreview();
-            }
         }
     }
 
@@ -242,7 +293,6 @@ document.addEventListener('DOMContentLoaded', () => {
         updateColorSwatches();
         if (image) {
             render();
-            renderMaskPreview();
         }
     }
 
@@ -268,7 +318,6 @@ document.addEventListener('DOMContentLoaded', () => {
         selectedSkinTones.push(hsv);
         updateColorSwatches();
         render();
-        renderMaskPreview();
     }
 
     function handleSave() {
@@ -281,16 +330,42 @@ document.addEventListener('DOMContentLoaded', () => {
     function handleWheel(event) {
         event.preventDefault();
         if (!image) return;
+
         const rect = canvas.getBoundingClientRect();
         const mouseX = event.clientX - rect.left;
         const mouseY = event.clientY - rect.top;
+
+        // 1. 將滑鼠在畫布上的座標，轉換為在當前視圖下的圖片座標
+        const { aspectCorrectionX, aspectCorrectionY } = getTransformMatrix();
+        const clipX = (mouseX / rect.width) * 2 - 1;
+        const clipY = (mouseY / rect.height) * -2 + 1;
+        const tx = panX / (canvas.width / 2);
+        const ty = -panY / (canvas.height / 2);
+        const sx = scale * aspectCorrectionX;
+        const sy = scale * aspectCorrectionY;
+        const imageX = (clipX - tx) / sx;
+        const imageY = (clipY - ty) / sy;
+
+        // 2. 計算縮放
         const zoomFactor = 1.1;
         const oldScale = scale;
-        if (event.deltaY < 0) { scale *= zoomFactor; } 
-        else { scale /= zoomFactor; }
+        if (event.deltaY < 0) {
+            scale *= zoomFactor;
+        } else {
+            scale /= zoomFactor;
+        }
         scale = Math.max(0.02, Math.min(scale, 50));
-        panX = mouseX - (mouseX - panX) * (scale / oldScale);
-        panY = mouseY - (mouseY - panY) * (scale / oldScale);
+        const newScale = scale;
+
+        // 3. 計算新的 pan，確保圖片座標在滑鼠下保持不變
+        const newSx = newScale * aspectCorrectionX;
+        const newSy = newScale * aspectCorrectionY;
+        const newTx = clipX - imageX * newSx;
+        const newTy = clipY - imageY * newSy;
+
+        panX = newTx * (canvas.width / 2);
+        panY = -newTy * (canvas.height / 2);
+
         render();
     }
 
@@ -332,6 +407,7 @@ document.addEventListener('DOMContentLoaded', () => {
         blurProgram = createProgram(gl, vertexShader, createShader(gl, gl.FRAGMENT_SHADER, blurFragmentShaderSource));
         maskProgram = createProgram(gl, vertexShader, createShader(gl, gl.FRAGMENT_SHADER, maskFragmentShaderSource));
         finalProgram = createProgram(gl, vertexShader, createShader(gl, gl.FRAGMENT_SHADER, finalFragmentShaderSource));
+        previewProgram = createProgram(gl, vertexShader, createShader(gl, gl.FRAGMENT_SHADER, previewFragmentShaderSource));
 
         positionBuffer = gl.createBuffer();
         gl.bindBuffer(gl.ARRAY_BUFFER, positionBuffer);
@@ -344,7 +420,7 @@ document.addEventListener('DOMContentLoaded', () => {
         originalTexture = createAndSetupTexture(gl);
         gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, image);
 
-        for (let i = 0; i < 4; i++) {
+        for (let i = 0; i < 5; i++) {
             const texture = createAndSetupTexture(gl, image.width, image.height);
             textures.push(texture);
             const fbo = gl.createFramebuffer();
@@ -361,8 +437,8 @@ document.addEventListener('DOMContentLoaded', () => {
         const identityMatrix = [1,0,0,0, 0,1,0,0, 0,0,1,0, 0,0,0,1];
         gl.viewport(0, 0, image.width, image.height);
 
-        // Pass 1: 生成硬邊遮罩 -> fbo[3]
-        gl.bindFramebuffer(gl.FRAMEBUFFER, framebuffers[3]);
+        // Pass 1: 生成硬邊遮罩 -> fbo[4] (專用於預覽)
+        gl.bindFramebuffer(gl.FRAMEBUFFER, framebuffers[4]);
         gl.useProgram(maskProgram);
         gl.uniformMatrix4fv(gl.getUniformLocation(maskProgram, 'u_transform'), false, identityMatrix);
         gl.uniform1i(gl.getUniformLocation(maskProgram, 'u_originalImage'), 0);
@@ -378,8 +454,8 @@ document.addEventListener('DOMContentLoaded', () => {
         // Pass 2 & 3: 生成低頻層 -> fbo[1]
         applyBlur(originalTexture, framebuffers[0], framebuffers[1], smoothness, image.width, image.height);
         
-        // Pass 4 & 5: 模糊遮罩 -> fbo[3]
-        applyBlur(textures[3], framebuffers[2], framebuffers[3], maskBlurRadius, image.width, image.height);
+        // Pass 4 & 5: 模糊遮罩 -> fbo[3] (使用 fbo[4] 作為輸入)
+        applyBlur(textures[4], framebuffers[2], framebuffers[3], maskBlurRadius, image.width, image.height);
 
         // Pass 6: 最終合成
         gl.bindFramebuffer(gl.FRAMEBUFFER, null);
@@ -402,6 +478,9 @@ document.addEventListener('DOMContentLoaded', () => {
         gl.activeTexture(gl.TEXTURE2);
         gl.bindTexture(gl.TEXTURE_2D, textures[3]);
         draw(finalProgram);
+        
+        // Pass 7: Render the mask preview using GPU
+        renderMaskPreviewOnMainCanvas();
     }
     
     function applyBlur(inputTexture, intermediateFBO, outputFBO, radius, width, height) {
@@ -425,38 +504,34 @@ document.addEventListener('DOMContentLoaded', () => {
         draw(blurProgram);
     }
 
-    function renderMaskPreview() {
+    function renderMaskPreviewOnMainCanvas() {
         if (!image) return;
-        gl.bindFramebuffer(gl.FRAMEBUFFER, framebuffers[3]);
-        const pixels = new Uint8Array(image.width * image.height * 4);
-        gl.readPixels(0, 0, image.width, image.height, gl.RGBA, gl.UNSIGNED_BYTE, pixels);
-        gl.bindFramebuffer(gl.FRAMEBUFFER, null);
+        const canvasRect = canvas.getBoundingClientRect();
+        const previewRect = previewContainer.getBoundingClientRect();
+        const previewX = previewRect.left - canvasRect.left;
+        const previewY = canvasRect.height - (previewRect.top - canvasRect.top) - previewRect.height;
+        const previewWidth = previewRect.width;
+        const previewHeight = previewRect.height;
 
-        const tempCanvas = document.createElement('canvas');
-        tempCanvas.width = image.width;
-        tempCanvas.height = image.height;
-        const tempCtx = tempCanvas.getContext('2d');
-        const imageData = tempCtx.createImageData(image.width, image.height);
-        const data = imageData.data;
-        for (let i = 0; i < image.height; i++) {
-            for (let j = 0; j < image.width; j++) {
-                const srcIndex = (i * image.width + j) * 4;
-                const destIndex = ((image.height - 1 - i) * image.width + j) * 4;
-                data[destIndex] = pixels[srcIndex];
-                data[destIndex + 1] = pixels[srcIndex + 1];
-                data[destIndex + 2] = pixels[srcIndex + 2];
-                data[destIndex + 3] = 255;
-            }
+        if (previewX + previewWidth <= 0 || previewX >= canvas.width || previewY + previewHeight <= 0 || previewY >= canvas.height) {
+            return;
         }
-        tempCtx.putImageData(imageData, 0, 0);
 
-        maskPreviewCtx.clearRect(0, 0, maskPreviewCanvas.width, maskPreviewCanvas.height);
-        const hRatio = maskPreviewCanvas.width / image.width;
-        const vRatio = maskPreviewCanvas.height / image.height;
-        const ratio = Math.min(hRatio, vRatio);
-        const centerShift_x = (maskPreviewCanvas.width - image.width * ratio) / 2;
-        const centerShift_y = (maskPreviewCanvas.height - image.height * ratio) / 2;
-        maskPreviewCtx.drawImage(tempCanvas, 0, 0, image.width, image.height, centerShift_x, centerShift_y, image.width * ratio, image.height * ratio);
+        gl.enable(gl.SCISSOR_TEST);
+        gl.scissor(previewX, previewY, previewWidth, previewHeight);
+        gl.viewport(previewX, previewY, previewWidth, previewHeight);
+        gl.clearColor(0.0, 0.0, 0.0, 1.0);
+        gl.clear(gl.COLOR_BUFFER_BIT);
+
+        gl.useProgram(previewProgram);
+        const identityMatrix = [1,0,0,0, 0,1,0,0, 0,0,1,0, 0,0,0,1];
+        gl.uniformMatrix4fv(gl.getUniformLocation(previewProgram, 'u_transform'), false, identityMatrix);
+        gl.uniform1i(gl.getUniformLocation(previewProgram, 'u_texture'), 0);
+        gl.activeTexture(gl.TEXTURE0);
+        gl.bindTexture(gl.TEXTURE_2D, textures[4]);
+        draw(previewProgram);
+
+        gl.disable(gl.SCISSOR_TEST);
     }
 
     function getTransformMatrix() {
@@ -591,6 +666,7 @@ document.addEventListener('DOMContentLoaded', () => {
             element.style.top = `${newY}px`;
             element.style.bottom = 'auto';
             element.style.right = 'auto';
+            if (image) render();
         });
         document.addEventListener('mouseup', (e) => {
             if (e.button !== 0) return;

@@ -27,7 +27,7 @@ function createWindow () {
   win.loadFile('index.html');
   
   // 如果需要，可以取消註解此行以開啟開發者工具
-  // win.webContents.openDevTools();
+  win.webContents.openDevTools();
 }
 
 // 當 Electron 應用程式準備就緒後執行

@@ -61,6 +61,10 @@ body {
     max-height: none;
     box-shadow: 0 25px 50px -12px var(--shadow-color);
     cursor: grab;
+    /* 新增樣式，讓 CSS 負責佈局 */
+    width: 100%;
+    height: 100%;
+    object-fit: contain; /* 保持圖片比例 */
 }
 
 #gl-canvas:active {
@@ -284,14 +288,13 @@ input[type="range"]::-webkit-slider-thumb:hover {
     right: 20px;
     width: 200px;
     height: 150px;
-    background-color: rgba(34, 37, 46, 0.8);
-    border: 1px solid var(--border-color);
+    background-color: transparent; /* 完全透明 */
+    border: none; /* 移除邊框 */
     border-radius: 8px;
     overflow: hidden;
-    backdrop-filter: blur(8px);
-    box-shadow: 0 8px 20px rgba(0, 0, 0, 0.4);
+    box-shadow: none; /* 移除陰影 */
     z-index: 10;
-    transition: transform 0.3s ease; /* 移除 all，避免影響 left/top */
+    transition: transform 0.3s ease;
 }
 .preview-container:hover {
     transform: scale(1.05);
