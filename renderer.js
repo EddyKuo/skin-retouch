@@ -467,19 +467,12 @@ document.addEventListener('DOMContentLoaded', () => {
             tempCanvas.height = imageObject.height;
             const tempCtx = tempCanvas.getContext('2d');
             const imageData = tempCtx.createImageData(imageObject.width, imageObject.height);
-            const data = imageData.data;
 
-            // Flip Y
-            for (let i = 0; i < imageObject.height; i++) {
-                for (let j = 0; j < imageObject.width; j++) {
-                    const srcIndex = (i * imageObject.width + j) * 4;
-                    const destIndex = ((imageObject.height - 1 - i) * imageObject.width + j) * 4;
-                    data[destIndex] = pixels[srcIndex];
-                    data[destIndex + 1] = pixels[srcIndex + 1];
-                    data[destIndex + 2] = pixels[srcIndex + 2];
-                    data[destIndex + 3] = pixels[srcIndex + 3];
-                }
-            }
+            // The engine now renders the result with a Y-flip, so the pixels
+            // returned by getPixelData (readPixels) are already in Top-Down order.
+            // We can directly copy them to the canvas.
+            imageData.data.set(pixels);
+
             tempCtx.putImageData(imageData, 0, 0);
             const dataUrl = tempCanvas.toDataURL('image/png');
             return dataUrl.replace(/^data:image\/png;base64,/, "");

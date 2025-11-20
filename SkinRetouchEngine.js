@@ -155,8 +155,15 @@ export class SkinRetouchEngine {
         gl.bindFramebuffer(gl.FRAMEBUFFER, this.framebuffers[0]);
         gl.viewport(0, 0, this.width, this.height);
 
-        const identityMatrix = [1,0,0,0, 0,1,0,0, 0,0,1,0, 0,0,0,1];
-        this.runFinalPass(identityMatrix, params);
+        // Use a flip-Y matrix for the final pass.
+        // This flips the geometry upside down.
+        // Since we draw into an FBO, and gl.readPixels reads from bottom-up,
+        // drawing "upside down" means the bottom row of the result will contain
+        // the top row of the image.
+        // Thus, readPixels will return data in Top-Down order (compatible with Canvas/PNG),
+        // avoiding the need for a CPU-side flip loop.
+        const flipYMatrix = [1,0,0,0, 0,-1,0,0, 0,0,1,0, 0,0,0,1];
+        this.runFinalPass(flipYMatrix, params);
 
         return this.textures[0];
     }
