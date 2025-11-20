@@ -1,11 +1,9 @@
-// 從輔助模組中引入 WebGL 著色器和程序創建函式
-import { createShader, createProgram } from './webgl-utils.js';
+import { SkinRetouchEngine } from './SkinRetouchEngine.js';
 
-// 當整個 HTML 文件被完全加載和解析後，執行初始化程式碼
 document.addEventListener('DOMContentLoaded', () => {
     console.log("DOM 已完全加載和解析");
 
-    // --- DOM 元素獲取 ---
+    // --- DOM Elements ---
     const canvas = document.getElementById('gl-canvas');
     const canvasContainer = document.querySelector('.canvas-container');
     const radiusSlider = document.getElementById('radius-slider');
@@ -24,18 +22,20 @@ document.addEventListener('DOMContentLoaded', () => {
     const fileInput = document.getElementById('file-input');
     const previewContainer = document.querySelector('.preview-container');
 
-    // --- WebGL 與狀態變數初始化 ---
-    const gl = canvas.getContext('webgl', { preserveDrawingBuffer: true });
+    // --- State Variables ---
     let image = null;
-    let smoothness = 0.1 + (parseFloat(radiusSlider.value) / 100) * 15;
-    let detailAmount = parseFloat(detailSlider.value) / 100.0;
-    let colorTolerance = parseFloat(toleranceSlider.value) / 100.0;
-    let maskExpansion = parseFloat(expansionSlider.value) / 200.0; // 轉換為 0.0 - 0.5
-    const maskBlurRadius = 5.0;
-    let selectedSkinTones = [];
-    let currentViewMode = 'final';
+    const params = {
+        smoothness: 0.1 + (parseFloat(radiusSlider.value) / 100) * 15,
+        detailAmount: parseFloat(detailSlider.value) / 100.0,
+        colorTolerance: parseFloat(toleranceSlider.value) / 100.0,
+        maskExpansion: parseFloat(expansionSlider.value) / 200.0,
+        maskBlurRadius: 5.0,
+        selectedSkinTones: [],
+        viewMode: 'final',
+        transformMatrix: null
+    };
 
-    // --- 視口狀態變數 ---
+    // --- Viewport State ---
     let scale = 1.0;
     let panX = 0.0;
     let panY = 0.0;
@@ -43,139 +43,11 @@ document.addEventListener('DOMContentLoaded', () => {
     let lastMouseX = 0;
     let lastMouseY = 0;
 
-    // --- WebGL 資源變數 ---
-    let originalTexture, blurProgram, maskProgram, finalProgram, previewProgram;
-    let positionBuffer, texCoordBuffer;
-    let textures = [], framebuffers = [];
+    // --- Engine Initialization ---
+    const gl = canvas.getContext('webgl', { preserveDrawingBuffer: true });
+    const engine = new SkinRetouchEngine(gl);
 
-    // --- GLSL 著色器原始碼 ---
-    const vertexShaderSource = `
-        attribute vec2 a_position;
-        attribute vec2 a_texCoord;
-        varying vec2 v_texCoord;
-        uniform mat4 u_transform;
-        void main() {
-            gl_Position = u_transform * vec4(a_position, 0.0, 1.0);
-            v_texCoord = a_texCoord;
-        }
-    `;
-
-    const blurFragmentShaderSource = `
-        precision highp float;
-        uniform sampler2D u_image;
-        uniform vec2 u_resolution;
-        uniform float u_radius;
-        uniform vec2 u_dir;
-        varying vec2 v_texCoord;
-        void main() {
-            vec2 uv = v_texCoord;
-            vec4 color = vec4(0.0);
-            float total = 0.0;
-            float sigma = u_radius;
-            if (sigma < 0.1) {
-                gl_FragColor = texture2D(u_image, uv);
-                return;
-            }
-            for (float i = -12.0; i <= 12.0; i += 1.0) {
-                float weight = (1.0 / (2.5066 * sigma)) * exp(-0.5 * (i * i) / (sigma * sigma));
-                vec2 offset = u_dir * i / u_resolution;
-                color += texture2D(u_image, uv + offset) * weight;
-                total += weight;
-            }
-            gl_FragColor = color / total;
-        }
-    `;
-
-    const maskFragmentShaderSource = `
-        precision highp float;
-        varying vec2 v_texCoord;
-        uniform sampler2D u_originalImage;
-        uniform vec3 u_skinTones[10];
-        uniform int u_toneCount;
-        uniform float u_tolerance;
-
-        vec3 rgb2hsv(vec3 c) {
-            vec4 K = vec4(0.0, -1.0 / 3.0, 2.0 / 3.0, -1.0);
-            vec4 p = mix(vec4(c.bg, K.wz), vec4(c.gb, K.xy), step(c.b, c.g));
-            vec4 q = mix(vec4(p.xyw, c.r), vec4(c.r, p.yzx), step(p.x, c.r));
-            float d = q.x - min(q.w, q.y);
-            float e = 1.0e-10;
-            return vec3(abs(q.z + (q.w - q.y) / (6.0 * d + e)), d / (q.x + e), q.x);
-        }
-
-        float hueDiff(float h1, float h2) {
-            float d = abs(h1 - h2);
-            return min(d, 1.0 - d);
-        }
-
-        void main() {
-            if (v_texCoord.x < 0.0 || v_texCoord.x > 1.0 || v_texCoord.y < 0.0 || v_texCoord.y > 1.0) {
-                gl_FragColor = vec4(0.0, 0.0, 0.0, 1.0);
-                return;
-            }
-            vec3 pixelRGB = texture2D(u_originalImage, v_texCoord).rgb;
-            vec3 pixelHSV = rgb2hsv(pixelRGB);
-            float mask = 0.0;
-            for (int i = 0; i < 10; i++) {
-                if (i >= u_toneCount) break;
-                vec3 toneHSV = u_skinTones[i];
-                float hDiff = hueDiff(pixelHSV.x, toneHSV.x);
-                float sDiff = abs(pixelHSV.y - toneHSV.y);
-                if (hDiff < u_tolerance && sDiff < u_tolerance * 1.5) {
-                    mask = 1.0;
-                    break;
-                }
-            }
-            gl_FragColor = vec4(vec3(mask), 1.0);
-        }
-    `;
-
-    const previewFragmentShaderSource = `
-        precision highp float;
-        varying vec2 v_texCoord;
-        uniform sampler2D u_texture;
-        void main() {
-            gl_FragColor = texture2D(u_texture, v_texCoord);
-        }
-    `;
-
-    const finalFragmentShaderSource = `
-        precision highp float;
-        varying vec2 v_texCoord;
-        uniform sampler2D u_originalImage;
-        uniform sampler2D u_blurredImage;
-        uniform sampler2D u_skinMask;
-        uniform float u_detailAmount;
-        uniform float u_maskExpansion;
-        uniform int u_viewMode;
-
-        void main() {
-            if (v_texCoord.x < 0.0 || v_texCoord.x > 1.0 || v_texCoord.y < 0.0 || v_texCoord.y > 1.0) {
-                gl_FragColor = vec4(0.1, 0.1, 0.1, 1.0);
-                return;
-            }
-            vec4 original = texture2D(u_originalImage, v_texCoord);
-            vec4 blurred = texture2D(u_blurredImage, v_texCoord);
-            float mask = texture2D(u_skinMask, v_texCoord).r;
-            mask = smoothstep(0.5 - u_maskExpansion, 0.5 + u_maskExpansion, mask);
-            vec3 highPass = original.rgb - blurred.rgb;
-
-            if (u_viewMode == 2) {
-                gl_FragColor = vec4(highPass + 0.5, 1.0);
-                return;
-            }
-            if (u_viewMode == 3) {
-                gl_FragColor = blurred;
-                return;
-            }
-
-            vec3 smoothedSkin = blurred.rgb + highPass * u_detailAmount;
-            vec3 finalColor = mix(original.rgb, smoothedSkin, mask);
-            gl_FragColor = vec4(finalColor, original.a);
-        }
-    `;
-
-    // --- 事件監聽器 ---
+    // --- Event Listeners ---
     loadBtn.addEventListener('click', () => fileInput.click());
     fileInput.addEventListener('change', handleFileSelect);
     radiusSlider.addEventListener('input', handleSliderChange);
@@ -185,7 +57,7 @@ document.addEventListener('DOMContentLoaded', () => {
     clearColorsBtn.addEventListener('click', handleClearColors);
     saveBtn.addEventListener('click', handleSave);
     viewModeGroup.addEventListener('change', (event) => {
-        currentViewMode = event.target.value;
+        params.viewMode = event.target.value;
         render();
     });
     canvas.addEventListener('wheel', handleWheel, { passive: false });
@@ -195,7 +67,7 @@ document.addEventListener('DOMContentLoaded', () => {
     canvas.addEventListener('mouseleave', handleMouseUp);
     canvas.addEventListener('contextmenu', handleContextMenu);
 
-    // --- Throttle 輔助函式 ---
+    // --- Throttle Helper ---
     function throttle(func, limit) {
         let inThrottle;
         let lastFunc;
@@ -219,31 +91,23 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     }
 
-    // --- 監聽視窗大小變化 (使用 Throttle) ---
+    // --- Resize Handler ---
     const handleResize = throttle(() => {
         if (!image) return;
         
-        // 讀取由 CSS 決定的畫布顯示尺寸
         const displayWidth = canvas.clientWidth;
         const displayHeight = canvas.clientHeight;
 
-        // 檢查繪圖緩衝區的尺寸是否與顯示尺寸不同
         if (canvas.width !== displayWidth || canvas.height !== displayHeight) {
-            // 如果不同，則同步它們
             canvas.width = displayWidth;
             canvas.height = displayHeight;
-            
-            // 通知 WebGL 視口已更新
-            gl.viewport(0, 0, canvas.width, canvas.height);
-            
-            // 重新渲染
             render();
         }
-    }, 100); // 每 100ms 最多執行一次
+    }, 100);
 
     window.addEventListener('resize', handleResize);
 
-    // --- 主要功能函式 ---
+    // --- Handlers ---
     function handleFileSelect(event) {
         const file = event.target.files[0];
         if (!file) return;
@@ -252,15 +116,15 @@ document.addEventListener('DOMContentLoaded', () => {
             const img = new Image();
             img.onload = () => {
                 image = img;
-                selectedSkinTones = [];
+                params.selectedSkinTones = [];
                 updateColorSwatches();
                 scale = 1.0;
                 panX = 0.0;
                 panY = 0.0;
                 canvas.width = canvasContainer.clientWidth;
                 canvas.height = canvasContainer.clientHeight;
-                gl.viewport(0, 0, canvas.width, canvas.height);
-                setupWebGL();
+
+                engine.setImage(image);
                 render();
             };
             img.src = e.target.result;
@@ -271,62 +135,51 @@ document.addEventListener('DOMContentLoaded', () => {
     function handleSliderChange(event) {
         if (event.target === radiusSlider) {
             const sliderValue = parseFloat(event.target.value);
-            smoothness = 0.1 + (sliderValue / 100) * 15;
+            params.smoothness = 0.1 + (sliderValue / 100) * 15;
             radiusValueSpan.textContent = sliderValue.toFixed(1);
         } else if (event.target === detailSlider) {
-            detailAmount = parseFloat(event.target.value) / 100.0;
+            params.detailAmount = parseFloat(event.target.value) / 100.0;
             detailValueSpan.textContent = event.target.value;
         } else if (event.target === toleranceSlider) {
-            colorTolerance = parseFloat(event.target.value) / 100.0;
+            params.colorTolerance = parseFloat(event.target.value) / 100.0;
             toleranceValueSpan.textContent = event.target.value;
         } else if (event.target === expansionSlider) {
-            maskExpansion = parseFloat(event.target.value) / 200.0;
+            params.maskExpansion = parseFloat(event.target.value) / 200.0;
             expansionValueSpan.textContent = event.target.value;
         }
-        if (image) {
-            render();
-        }
+        if (image) render();
     }
 
     function handleClearColors() {
-        selectedSkinTones = [];
+        params.selectedSkinTones = [];
         updateColorSwatches();
-        if (image) {
-            render();
-        }
+        if (image) render();
     }
 
     function handleContextMenu(event) {
         event.preventDefault();
         if (!image) return;
-        if (selectedSkinTones.length >= 10) {
-            selectedSkinTones.shift();
+        if (params.selectedSkinTones.length >= 10) {
+            params.selectedSkinTones.shift();
         }
         const { pixelX, pixelY } = getPixelCoordinatesFromEvent(event);
         if (pixelX < 0 || pixelX >= image.width || pixelY < 0 || pixelY >= image.height) return;
 
-        const tempFBO = gl.createFramebuffer();
-        gl.bindFramebuffer(gl.FRAMEBUFFER, tempFBO);
-        gl.framebufferTexture2D(gl.FRAMEBUFFER, gl.COLOR_ATTACHMENT0, gl.TEXTURE_2D, originalTexture, 0);
-        const pixelData = new Uint8Array(4);
-        gl.readPixels(pixelX, pixelY, 1, 1, gl.RGBA, gl.UNSIGNED_BYTE, pixelData);
-        gl.bindFramebuffer(gl.FRAMEBUFFER, null);
-        gl.deleteFramebuffer(tempFBO);
-
-        const rgb = [pixelData[0] / 255, pixelData[1] / 255, pixelData[2] / 255];
+        const rgb = engine.getPixelColor(pixelX, pixelY);
         const hsv = rgbToHsv(rgb[0], rgb[1], rgb[2]);
-        selectedSkinTones.push(hsv);
+        params.selectedSkinTones.push(hsv);
         updateColorSwatches();
         render();
     }
 
     function handleSave() {
         if (!image) return;
+        // Use BatchProcessor's renderer logic to get full res image
         const base64Data = BatchProcessor.renderImageOffscreen(image);
         window.electronAPI.saveImage({ data: base64Data });
     }
 
-    // --- 視口控制 ---
+    // --- Viewport Control ---
     function handleWheel(event) {
         event.preventDefault();
         if (!image) return;
@@ -335,7 +188,6 @@ document.addEventListener('DOMContentLoaded', () => {
         const mouseX = event.clientX - rect.left;
         const mouseY = event.clientY - rect.top;
 
-        // 1. 將滑鼠在畫布上的座標，轉換為在當前視圖下的圖片座標
         const { aspectCorrectionX, aspectCorrectionY } = getTransformMatrix();
         const clipX = (mouseX / rect.width) * 2 - 1;
         const clipY = (mouseY / rect.height) * -2 + 1;
@@ -346,9 +198,7 @@ document.addEventListener('DOMContentLoaded', () => {
         const imageX = (clipX - tx) / sx;
         const imageY = (clipY - ty) / sy;
 
-        // 2. 計算縮放
         const zoomFactor = 1.1;
-        const oldScale = scale;
         if (event.deltaY < 0) {
             scale *= zoomFactor;
         } else {
@@ -357,7 +207,6 @@ document.addEventListener('DOMContentLoaded', () => {
         scale = Math.max(0.02, Math.min(scale, 50));
         const newScale = scale;
 
-        // 3. 計算新的 pan，確保圖片座標在滑鼠下保持不變
         const newSx = newScale * aspectCorrectionX;
         const newSy = newScale * aspectCorrectionY;
         const newTx = clipX - imageX * newSx;
@@ -394,144 +243,25 @@ document.addEventListener('DOMContentLoaded', () => {
         canvas.style.cursor = 'grab';
     }
 
-    // --- WebGL 核心 ---
-    function setupWebGL() {
-        if (!gl) { alert('WebGL 不被支援!'); return; }
-        if (originalTexture) gl.deleteTexture(originalTexture);
-        textures.forEach(t => gl.deleteTexture(t));
-        framebuffers.forEach(f => gl.deleteFramebuffer(f));
-        textures = [];
-        framebuffers = [];
-
-        const vertexShader = createShader(gl, gl.VERTEX_SHADER, vertexShaderSource);
-        blurProgram = createProgram(gl, vertexShader, createShader(gl, gl.FRAGMENT_SHADER, blurFragmentShaderSource));
-        maskProgram = createProgram(gl, vertexShader, createShader(gl, gl.FRAGMENT_SHADER, maskFragmentShaderSource));
-        finalProgram = createProgram(gl, vertexShader, createShader(gl, gl.FRAGMENT_SHADER, finalFragmentShaderSource));
-        previewProgram = createProgram(gl, vertexShader, createShader(gl, gl.FRAGMENT_SHADER, previewFragmentShaderSource));
-
-        positionBuffer = gl.createBuffer();
-        gl.bindBuffer(gl.ARRAY_BUFFER, positionBuffer);
-        gl.bufferData(gl.ARRAY_BUFFER, new Float32Array([-1, -1, 1, -1, -1, 1, -1, 1, 1, -1, 1, 1]), gl.STATIC_DRAW);
-        texCoordBuffer = gl.createBuffer();
-        gl.bindBuffer(gl.ARRAY_BUFFER, texCoordBuffer);
-        gl.bufferData(gl.ARRAY_BUFFER, new Float32Array([0, 0, 1, 0, 0, 1, 0, 1, 1, 0, 1, 1]), gl.STATIC_DRAW);
-
-        gl.pixelStorei(gl.UNPACK_FLIP_Y_WEBGL, true);
-        originalTexture = createAndSetupTexture(gl);
-        gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, image);
-
-        for (let i = 0; i < 5; i++) {
-            const texture = createAndSetupTexture(gl, image.width, image.height);
-            textures.push(texture);
-            const fbo = gl.createFramebuffer();
-            framebuffers.push(fbo);
-            gl.bindFramebuffer(gl.FRAMEBUFFER, fbo);
-            gl.framebufferTexture2D(gl.FRAMEBUFFER, gl.COLOR_ATTACHMENT0, gl.TEXTURE_2D, texture, 0);
-        }
-        gl.bindFramebuffer(gl.FRAMEBUFFER, null);
-    }
-
     function render() {
         if (!image) return;
         const { transformMatrix } = getTransformMatrix();
-        const identityMatrix = [1,0,0,0, 0,1,0,0, 0,0,1,0, 0,0,0,1];
-        gl.viewport(0, 0, image.width, image.height);
-
-        // Pass 1: 生成硬邊遮罩 -> fbo[4] (專用於預覽)
-        gl.bindFramebuffer(gl.FRAMEBUFFER, framebuffers[4]);
-        gl.useProgram(maskProgram);
-        gl.uniformMatrix4fv(gl.getUniformLocation(maskProgram, 'u_transform'), false, identityMatrix);
-        gl.uniform1i(gl.getUniformLocation(maskProgram, 'u_originalImage'), 0);
-        gl.uniform1i(gl.getUniformLocation(maskProgram, 'u_toneCount'), selectedSkinTones.length);
-        gl.uniform1f(gl.getUniformLocation(maskProgram, 'u_tolerance'), colorTolerance);
-        if (selectedSkinTones.length > 0) {
-            gl.uniform3fv(gl.getUniformLocation(maskProgram, 'u_skinTones'), selectedSkinTones.flat());
-        }
-        gl.activeTexture(gl.TEXTURE0);
-        gl.bindTexture(gl.TEXTURE_2D, originalTexture);
-        draw(maskProgram);
-
-        // Pass 2 & 3: 生成低頻層 -> fbo[1]
-        applyBlur(originalTexture, framebuffers[0], framebuffers[1], smoothness, image.width, image.height);
-        
-        // Pass 4 & 5: 模糊遮罩 -> fbo[3] (使用 fbo[4] 作為輸入)
-        applyBlur(textures[4], framebuffers[2], framebuffers[3], maskBlurRadius, image.width, image.height);
-
-        // Pass 6: 最終合成
-        gl.bindFramebuffer(gl.FRAMEBUFFER, null);
-        gl.viewport(0, 0, canvas.width, canvas.height);
-        gl.clearColor(0.1, 0.1, 0.1, 1);
-        gl.clear(gl.COLOR_BUFFER_BIT);
-        gl.useProgram(finalProgram);
-        const viewModeMap = { 'final': 0, 'high': 2, 'low': 3 };
-        gl.uniformMatrix4fv(gl.getUniformLocation(finalProgram, 'u_transform'), false, transformMatrix);
-        gl.uniform1i(gl.getUniformLocation(finalProgram, 'u_viewMode'), viewModeMap[currentViewMode]);
-        gl.uniform1f(gl.getUniformLocation(finalProgram, 'u_detailAmount'), detailAmount);
-        gl.uniform1f(gl.getUniformLocation(finalProgram, 'u_maskExpansion'), maskExpansion);
-        gl.uniform1i(gl.getUniformLocation(finalProgram, 'u_originalImage'), 0);
-        gl.uniform1i(gl.getUniformLocation(finalProgram, 'u_blurredImage'), 1);
-        gl.uniform1i(gl.getUniformLocation(finalProgram, 'u_skinMask'), 2);
-        gl.activeTexture(gl.TEXTURE0);
-        gl.bindTexture(gl.TEXTURE_2D, originalTexture);
-        gl.activeTexture(gl.TEXTURE1);
-        gl.bindTexture(gl.TEXTURE_2D, textures[1]);
-        gl.activeTexture(gl.TEXTURE2);
-        gl.bindTexture(gl.TEXTURE_2D, textures[3]);
-        draw(finalProgram);
-        
-        // Pass 7: Render the mask preview using GPU
+        params.transformMatrix = transformMatrix;
+        engine.renderToScreen(params);
         renderMaskPreviewOnMainCanvas();
-    }
-    
-    function applyBlur(inputTexture, intermediateFBO, outputFBO, radius, width, height) {
-        const identityMatrix = [1,0,0,0, 0,1,0,0, 0,0,1,0, 0,0,0,1];
-        gl.useProgram(blurProgram);
-        gl.uniformMatrix4fv(gl.getUniformLocation(blurProgram, 'u_transform'), false, identityMatrix);
-        gl.uniform1f(gl.getUniformLocation(blurProgram, 'u_radius'), radius);
-        gl.uniform2f(gl.getUniformLocation(blurProgram, 'u_resolution'), width, height);
-
-        // Horizontal
-        gl.bindFramebuffer(gl.FRAMEBUFFER, intermediateFBO);
-        gl.uniform2f(gl.getUniformLocation(blurProgram, 'u_dir'), 1, 0);
-        gl.activeTexture(gl.TEXTURE0);
-        gl.bindTexture(gl.TEXTURE_2D, inputTexture);
-        draw(blurProgram);
-
-        // Vertical
-        gl.bindFramebuffer(gl.FRAMEBUFFER, outputFBO);
-        gl.uniform2f(gl.getUniformLocation(blurProgram, 'u_dir'), 0, 1);
-        gl.bindTexture(gl.TEXTURE_2D, textures[framebuffers.indexOf(intermediateFBO)]);
-        draw(blurProgram);
     }
 
     function renderMaskPreviewOnMainCanvas() {
         if (!image) return;
         const canvasRect = canvas.getBoundingClientRect();
         const previewRect = previewContainer.getBoundingClientRect();
+
+        // Calculate position relative to canvas (bottom-left origin for GL scissors)
+        // GL y=0 is bottom. HTML y=0 is top.
         const previewX = previewRect.left - canvasRect.left;
         const previewY = canvasRect.height - (previewRect.top - canvasRect.top) - previewRect.height;
-        const previewWidth = previewRect.width;
-        const previewHeight = previewRect.height;
 
-        if (previewX + previewWidth <= 0 || previewX >= canvas.width || previewY + previewHeight <= 0 || previewY >= canvas.height) {
-            return;
-        }
-
-        gl.enable(gl.SCISSOR_TEST);
-        gl.scissor(previewX, previewY, previewWidth, previewHeight);
-        gl.viewport(previewX, previewY, previewWidth, previewHeight);
-        gl.clearColor(0.0, 0.0, 0.0, 1.0);
-        gl.clear(gl.COLOR_BUFFER_BIT);
-
-        gl.useProgram(previewProgram);
-        const identityMatrix = [1,0,0,0, 0,1,0,0, 0,0,1,0, 0,0,0,1];
-        gl.uniformMatrix4fv(gl.getUniformLocation(previewProgram, 'u_transform'), false, identityMatrix);
-        gl.uniform1i(gl.getUniformLocation(previewProgram, 'u_texture'), 0);
-        gl.activeTexture(gl.TEXTURE0);
-        gl.bindTexture(gl.TEXTURE_2D, textures[4]);
-        draw(previewProgram);
-
-        gl.disable(gl.SCISSOR_TEST);
+        engine.drawMaskPreview(previewX, previewY, previewRect.width, previewRect.height);
     }
 
     function getTransformMatrix() {
@@ -572,34 +302,9 @@ document.addEventListener('DOMContentLoaded', () => {
         };
     }
 
-    function createAndSetupTexture(gl, width, height) {
-        const texture = gl.createTexture();
-        gl.bindTexture(gl.TEXTURE_2D, texture);
-        gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE);
-        gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
-        gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR);
-        gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.LINEAR);
-        if (width && height) {
-            gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, width, height, 0, gl.RGBA, gl.UNSIGNED_BYTE, null);
-        }
-        return texture;
-    }
-
-    function draw(program) {
-        const positionLocation = gl.getAttribLocation(program, 'a_position');
-        const texCoordLocation = gl.getAttribLocation(program, 'a_texCoord');
-        gl.enableVertexAttribArray(positionLocation);
-        gl.bindBuffer(gl.ARRAY_BUFFER, positionBuffer);
-        gl.vertexAttribPointer(positionLocation, 2, gl.FLOAT, false, 0, 0);
-        gl.enableVertexAttribArray(texCoordLocation);
-        gl.bindBuffer(gl.ARRAY_BUFFER, texCoordBuffer);
-        gl.vertexAttribPointer(texCoordLocation, 2, gl.FLOAT, false, 0, 0);
-        gl.drawArrays(gl.TRIANGLES, 0, 6);
-    }
-
     function updateColorSwatches() {
         colorSwatchesContainer.innerHTML = '';
-        selectedSkinTones.forEach(hsv => {
+        params.selectedSkinTones.forEach(hsv => {
             const rgb = hsvToRgb(hsv[0], hsv[1], hsv[2]);
             const swatch = document.createElement('div');
             swatch.className = 'swatch';
@@ -680,6 +385,7 @@ document.addEventListener('DOMContentLoaded', () => {
         queue: [],
         currentIndex: 0,
         isProcessing: false,
+        engine: null,
         init() {
             const batchBtn = document.getElementById('batch-btn');
             batchBtn.addEventListener('click', this.handleBatchClick.bind(this));
@@ -692,10 +398,17 @@ document.addEventListener('DOMContentLoaded', () => {
                 this.log(`❌ 錯誤: ${errorMessage}`);
                 this.stop();
             });
+
+            // Initialize offscreen engine
+            const offscreenCanvas = document.createElement('canvas');
+            // No need to append to document, just get context
+            // Note: we need to set width/height but engine.resize handles it
+            const gl = offscreenCanvas.getContext('webgl');
+            this.engine = new SkinRetouchEngine(gl);
         },
         handleBatchClick() {
             if (this.isProcessing) return;
-            if (selectedSkinTones.length === 0) {
+            if (params.selectedSkinTones.length === 0) {
                 alert('開始批次處理前，請先選取至少一個膚色樣本。');
                 return;
             }
@@ -743,111 +456,20 @@ document.addEventListener('DOMContentLoaded', () => {
             img.src = "file://" + filePath;
         },
         renderImageOffscreen(imageObject) {
-            const tempOriginalTexture = createAndSetupTexture(gl);
-            gl.bindTexture(gl.TEXTURE_2D, tempOriginalTexture);
-            gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, imageObject);
-
-            const tempFBOs = [gl.createFramebuffer(), gl.createFramebuffer(), gl.createFramebuffer(), gl.createFramebuffer()];
-            const tempTextures = [
-                createAndSetupTexture(gl, imageObject.width, imageObject.height),
-                createAndSetupTexture(gl, imageObject.width, imageObject.height),
-                createAndSetupTexture(gl, imageObject.width, imageObject.height),
-                createAndSetupTexture(gl, imageObject.width, imageObject.height)
-            ];
-            for (let i = 0; i < 4; i++) {
-                gl.bindFramebuffer(gl.FRAMEBUFFER, tempFBOs[i]);
-                gl.framebufferTexture2D(gl.FRAMEBUFFER, gl.COLOR_ATTACHMENT0, gl.TEXTURE_2D, tempTextures[i], 0);
-            }
-
-            gl.viewport(0, 0, imageObject.width, imageObject.height);
-            const identityMatrix = [1,0,0,0, 0,1,0,0, 0,0,1,0, 0,0,0,1];
+            // Reuse the persistent engine!
+            this.engine.setImage(imageObject);
+            this.engine.renderToTexture(params);
+            const pixels = this.engine.getPixelData();
             
-            const tempPositionBuffer = gl.createBuffer();
-            gl.bindBuffer(gl.ARRAY_BUFFER, tempPositionBuffer);
-            gl.bufferData(gl.ARRAY_BUFFER, new Float32Array([-1, -1, 1, -1, -1, 1, -1, 1, 1, -1, 1, 1]), gl.STATIC_DRAW);
-            const tempTexCoordBuffer = gl.createBuffer();
-            gl.bindBuffer(gl.ARRAY_BUFFER, tempTexCoordBuffer);
-            gl.bufferData(gl.ARRAY_BUFFER, new Float32Array([0, 0, 1, 0, 0, 1, 0, 1, 1, 0, 1, 1]), gl.STATIC_DRAW);
-
-            const tempDraw = (program) => {
-                const posLoc = gl.getAttribLocation(program, 'a_position');
-                const texLoc = gl.getAttribLocation(program, 'a_texCoord');
-                gl.enableVertexAttribArray(posLoc);
-                gl.bindBuffer(gl.ARRAY_BUFFER, tempPositionBuffer);
-                gl.vertexAttribPointer(posLoc, 2, gl.FLOAT, false, 0, 0);
-                gl.enableVertexAttribArray(texLoc);
-                gl.bindBuffer(gl.ARRAY_BUFFER, tempTexCoordBuffer);
-                gl.vertexAttribPointer(texLoc, 2, gl.FLOAT, false, 0, 0);
-                gl.drawArrays(gl.TRIANGLES, 0, 6);
-            };
-
-            // --- Full Render Pipeline ---
-            gl.bindFramebuffer(gl.FRAMEBUFFER, tempFBOs[3]);
-            gl.useProgram(maskProgram);
-            gl.uniformMatrix4fv(gl.getUniformLocation(maskProgram, 'u_transform'), false, identityMatrix);
-            gl.uniform1i(gl.getUniformLocation(maskProgram, 'u_originalImage'), 0);
-            gl.uniform1i(gl.getUniformLocation(maskProgram, 'u_toneCount'), selectedSkinTones.length);
-            gl.uniform1f(gl.getUniformLocation(maskProgram, 'u_tolerance'), colorTolerance);
-            if (selectedSkinTones.length > 0) {
-                gl.uniform3fv(gl.getUniformLocation(maskProgram, 'u_skinTones'), selectedSkinTones.flat());
-            }
-            gl.activeTexture(gl.TEXTURE0);
-            gl.bindTexture(gl.TEXTURE_2D, tempOriginalTexture);
-            tempDraw(maskProgram);
-
-            const tempApplyBlur = (inputTex, interFBO, outFBO, radius) => {
-                gl.useProgram(blurProgram);
-                gl.uniformMatrix4fv(gl.getUniformLocation(blurProgram, 'u_transform'), false, identityMatrix);
-                gl.uniform1f(gl.getUniformLocation(blurProgram, 'u_radius'), radius);
-                gl.uniform2f(gl.getUniformLocation(blurProgram, 'u_resolution'), imageObject.width, imageObject.height);
-                gl.bindFramebuffer(gl.FRAMEBUFFER, interFBO);
-                gl.uniform2f(gl.getUniformLocation(blurProgram, 'u_dir'), 1, 0);
-                gl.activeTexture(gl.TEXTURE0);
-                gl.bindTexture(gl.TEXTURE_2D, inputTex);
-                tempDraw(blurProgram);
-                gl.bindFramebuffer(gl.FRAMEBUFFER, outFBO);
-                gl.uniform2f(gl.getUniformLocation(blurProgram, 'u_dir'), 0, 1);
-                gl.bindTexture(gl.TEXTURE_2D, tempTextures[tempFBOs.indexOf(interFBO)]);
-                tempDraw(blurProgram);
-            };
-
-            tempApplyBlur(tempOriginalTexture, tempFBOs[0], tempFBOs[1], smoothness);
-            tempApplyBlur(tempTextures[3], tempFBOs[2], tempFBOs[3], maskBlurRadius);
-
-            gl.bindFramebuffer(gl.FRAMEBUFFER, tempFBOs[0]);
-            gl.useProgram(finalProgram);
-            gl.uniformMatrix4fv(gl.getUniformLocation(finalProgram, 'u_transform'), false, identityMatrix);
-            gl.uniform1i(gl.getUniformLocation(finalProgram, 'u_viewMode'), 0);
-            gl.uniform1f(gl.getUniformLocation(finalProgram, 'u_detailAmount'), detailAmount);
-            gl.uniform1f(gl.getUniformLocation(finalProgram, 'u_maskExpansion'), maskExpansion);
-            gl.uniform1i(gl.getUniformLocation(finalProgram, 'u_originalImage'), 0);
-            gl.uniform1i(gl.getUniformLocation(finalProgram, 'u_blurredImage'), 1);
-            gl.uniform1i(gl.getUniformLocation(finalProgram, 'u_skinMask'), 2);
-            gl.activeTexture(gl.TEXTURE0);
-            gl.bindTexture(gl.TEXTURE_2D, tempOriginalTexture);
-            gl.activeTexture(gl.TEXTURE1);
-            gl.bindTexture(gl.TEXTURE_2D, tempTextures[1]);
-            gl.activeTexture(gl.TEXTURE2);
-            gl.bindTexture(gl.TEXTURE_2D, tempTextures[3]);
-            tempDraw(finalProgram);
-
-            const pixels = new Uint8Array(imageObject.width * imageObject.height * 4);
-            gl.readPixels(0, 0, imageObject.width, imageObject.height, gl.RGBA, gl.UNSIGNED_BYTE, pixels);
-
-            gl.bindFramebuffer(gl.FRAMEBUFFER, null);
-            tempFBOs.forEach(fbo => gl.deleteFramebuffer(fbo));
-            tempTextures.forEach(texture => gl.deleteTexture(texture));
-            gl.deleteTexture(tempOriginalTexture);
-            gl.deleteBuffer(tempPositionBuffer);
-            gl.deleteBuffer(tempTexCoordBuffer);
-            gl.viewport(0, 0, canvas.width, canvas.height);
-
+            // Convert pixels to Base64 (needs a 2D canvas)
             const tempCanvas = document.createElement('canvas');
             tempCanvas.width = imageObject.width;
             tempCanvas.height = imageObject.height;
             const tempCtx = tempCanvas.getContext('2d');
             const imageData = tempCtx.createImageData(imageObject.width, imageObject.height);
             const data = imageData.data;
+
+            // Flip Y
             for (let i = 0; i < imageObject.height; i++) {
                 for (let j = 0; j < imageObject.width; j++) {
                     const srcIndex = (i * imageObject.width + j) * 4;
